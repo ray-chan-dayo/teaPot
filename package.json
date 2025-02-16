@@ -1,0 +1,14 @@
+{
+  "name": "teapot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx tsx src/example.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}
