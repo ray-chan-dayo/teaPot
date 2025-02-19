@@ -1,4 +1,4 @@
-import { isDecimalNumber, splitFirst } from "./libs";
+import { isDecimalNumber, splitFirst } from "./libs/miscs";
 
 export function jasmineDataPicker(text: string) {
     const br = /\r\n|\n|\r/g

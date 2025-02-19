@@ -1,8 +1,8 @@
 type Expect<T> = Success<T> | PotError
 
 class Success<T> {
-    success: true;
-    value: T;
+    success: true
+    value: T
     constructor(value) {
         this.success = true
         this.value = value

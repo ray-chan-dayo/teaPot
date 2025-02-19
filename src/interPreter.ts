@@ -1,4 +1,4 @@
-import { splitFirst } from "./libs"
+import { splitFirst } from "./libs/miscs"
 
 export function jasmineInterPrinter(text: string) {
 
