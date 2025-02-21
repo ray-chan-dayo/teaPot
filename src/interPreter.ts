@@ -1,4 +1,5 @@
 import { splitFirst } from "./libs/miscs"
+import { parseArgs } from "./parseArgs"
 
 export function jasmineInterPrinter(text: string) {
 
@@ -8,44 +9,45 @@ export function jasmineInterPrinter(text: string) {
     const pics = []
     const backgrounds = []
 
-    function parseCoordinate() {
-        
-    }
-    
-    function parseString(string) {
-        
-    }
-
-    function parseNumber(text: string): number {
-        
-        return parseInt(text);
-    }
-
-    
-
     // interprinter
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trimStart()
         const section = splitFirst(line, " ")
         const args = section[1]
         switch (section[0]) {
-            case "print":
-                console.log(parseString(args))
-                break;
-            case "let":
-                // console.log(parseString(args))
-                break;
             case "def":
-                
-                break;
-        
+            case "end":
+            case "exit":
+            case "for":
+            case "while":
+            case "do":
+            case "if":
+            case "else":
+            case "let":
+            case "const":
+            case "var":
+
+                break
             default:
-                break;
+                parseArgs(args)
+                switch (section[0]) {
+                    case "print":
+                        parseArgs
+                        console.log(parseString(args))
+                        break
+                    case "def":
+                        
+                        break
+                
+                    default:
+                        break
+                }
+                break
         }
     }
 }
 
 // function extractFirstParentheses(input): Array<string> {
-//     const match = input.match(/\(([^)]*)\)/);
-//     return match ? match[1] : null;
+//     const match = input.match(/\(([^)]*)\)/)
+//     return match ? match[1] : null
 // }

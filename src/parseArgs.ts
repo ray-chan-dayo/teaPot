@@ -1,12 +1,12 @@
-import { brackets } from "./libs/brackets";
+import { brackets } from "./libs/brackets"
 import { Expect } from "./libs/expect"
-import * as leaf from "./leaves";
+import * as leaf from "./leaves"
 
 export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
     
     const ripped = input.split('"')
     if (ripped.length % 2 !== 1)
-        return Expect.error("Invalid Quote")
+        return Expect.error("invalid_quote")
 
     const result:Array<leaf.Prototype> = []
     for (let i = 0; i < ripped.length; i++) {
@@ -32,7 +32,7 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                 isPotentiallyFunction = false
                 isPotentiallyArray = false
             } else
-                return Expect.error(", expected")
+                return Expect.error("comma_expected")
         else
             if ( leaf.isUnparsed(result[i])) {
                 const c:string = (result[i] as leaf.Unparsed).value
@@ -42,29 +42,26 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                             hasComma = true
                             isPotentiallyArray = false
                             isPotentiallyFunction = false
-                            break;
+                            break
                         case " ":
                             isPotentiallyArray = false
                             isPotentiallyFunction = false
-                            break;
+                            break
                         case "(":
                             
-                            break;
+                            break
                         case "[":
                             
-                            break;
+                            break
                         case ")":
                             
-                            break;
+                            break
                         case "]":
                             
-                            break;
-                        case "]":
-                            
-                            break;
+                            break
                         default:
 
-                            break;
+                            break
                     }
                 }
             } else { //alphanumeric
@@ -74,7 +71,7 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                     isPotentiallyFunction = true
                     isPotentiallyArray = true
                 } else
-                    return Expect.error(", expected")
+                    return Expect.error("comma_expected")
             }
     }
 }
