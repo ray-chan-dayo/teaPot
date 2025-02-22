@@ -72,9 +72,18 @@ export class RoundBracket {
     children: Array<Prototype> = []
 }
 
-export class SquareBracket {
-    type: "round" = "round"
-    children: Array<Prototype> = []
+export class ArrayLiteral {
+    type: "array" = "array"
+    elements: Array<Prototype> = []
+}
+
+export class ArrayElement {
+    type: "elem" = "elem"
+    arrayName: string
+    index: Array<Prototype> = []
+    constructor(arrayName:string) {
+        this.arrayName = arrayName
+    }
 }
 
 export class Origin {
@@ -83,4 +92,13 @@ export class Origin {
 }
 
 // 型エイリアスの定義
-export type Prototype = Coordinate | Arithmetic | Func | StringLiteral | NumberLiteral | Unparsed | RoundBracket | SquareBracket | Origin
+export type Prototype = Coordinate
+| Arithmetic
+| Func
+| StringLiteral
+| NumberLiteral
+| Unparsed
+| RoundBracket
+| ArrayLiteral
+| ArrayElement
+| Origin

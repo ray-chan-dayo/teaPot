@@ -1,4 +1,4 @@
-import { brackets } from "./libs/brackets"
+\import { brackets } from "./libs/brackets"
 import { Expect } from "./libs/expect"
 import * as leaf from "./leaves"
 
@@ -16,7 +16,7 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
             ripped[i].match(/\w+|\W/)?.forEach(e=>unparsed.push(new leaf.Unparsed(e)))
         }
     }
-{
+
     let isPotentiallyFunction: boolean = false
     ,   isPotentiallyArray: boolean = false
     ,   isObjectExpected: boolean = true
@@ -47,13 +47,15 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                             isPotentiallyArray = false
                             isPotentiallyFunction = false
                             break
-                        case " ":
+                        case " ":{
                             isPotentiallyArray = false
-                            break
-                        case "(":
+                        }break
+
+                        case "(":{
                             let currentParent: Array<leaf.Prototype>
                             if (isPotentiallyFunction) {
                                 // function化の処理
+                                // 下の配列添え字の処理と統合した方がスマートかな？後でやってみたい。
                                 const prev = parent.pop()
                                 if (leaf.isUnparsed(prev)) {
                                     const funcName = prev.value
@@ -77,22 +79,55 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                                 parent: currentParent
                             })
                             parent = currentParent
-                            break
-                        case "[":
+
+                            isObjectExpected = true
+                            isPotentiallyArray = false
+                            isPotentiallyFunction = false
+                        }break
+
+                        case "[":{
+                            let currentParent: Array<leaf.Prototype>
                             if (isPotentiallyArray) {
-                                // 添え字の処理
-                            }
-                            break
+                                // 添え字の処理 (functionのを流用)
+                                const prev = parent.pop()
+                                if (leaf.isUnparsed(prev)) {
+                                    const arrayName = prev.value
+                                    parent.push(new leaf.ArrayElement(arrayName))
+                                    // 今pushしたばかりのleafを取得
+                                    currentParent = (parent[parent.length-1] as leaf.ArrayElement).index
+                                } else {
+                                    console.error(`isPotentiallyArray is true but prev was not unparsed. Got: ${prev}`)
+                                    return Expect.error("internal_error")
+                                }
+                            } else 
+                                if (isObjectExpected) {
+                                    // 配列の生成
+                                    parent.push(new leaf.ArrayLiteral())
+                                    currentParent = (parent[parent.length-1] as leaf.ArrayLiteral).elements
+                                } else
+                                    return Expect.error("unexpected_[")
+                            // 閉じ括弧の処理
+                            currentBrackets.push({
+                                bracketType: "]",
+                                parent: currentParent
+                            })
+                            parent = currentParent
+
+                            isObjectExpected = true
+                            isPotentiallyArray = true
+                            isPotentiallyFunction = false
+                        }break
                         case ")":
-                        case "]":
-                            // bracket closer
+                        case "]":{
+                            // 閉じ括弧の処理
                             if ( currentLeaf.value === currentBrackets[0].bracketType ) {
-                                currentBrackets.shift()
+                                currentBrackets.pop()
                                 parent = currentBrackets[currentBrackets.length - 1].parent
-                            }
-                            else
+                                // push to result
+                            } else
                                 return Expect.error("unexpected_bracket_close")
-                            break
+                        }
+                        break
                         default:
                             return Expect.error("unexpected_letter")
                             break
@@ -108,4 +143,4 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                     return Expect.error("comma_expected")
             }
     }
-}}
+}
