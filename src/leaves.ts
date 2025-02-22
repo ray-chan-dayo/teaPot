@@ -54,6 +54,10 @@ export class NumberLiteral {
     }
 }
 
+export function isNumber(l:Prototype | undefined):l is NumberLiteral {
+    return l !== undefined && l.type === "number";
+}
+
 export class Unparsed {
     type: "unparsed" = "unparsed"
     value: string
@@ -102,3 +106,9 @@ export type Prototype = Coordinate
 | ArrayLiteral
 | ArrayElement
 | Origin
+
+export type Mathable = Arithmetic
+| Func
+| NumberLiteral
+| Unparsed
+| ArrayElement
