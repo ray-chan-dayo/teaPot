@@ -1,4 +1,4 @@
-\import { brackets } from "./libs/brackets"
+import { brackets } from "./libs/brackets"
 import { Expect } from "./libs/expect"
 import * as leaf from "./leaves"
 
@@ -17,6 +17,7 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
         }
     }
 
+    // bracket parser
     let isPotentiallyFunction: boolean = false
     ,   isPotentiallyArray: boolean = false
     ,   isObjectExpected: boolean = true
@@ -24,8 +25,8 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
         bracketType: ")" | "]" | "}",
         parent: Array<leaf.Prototype>
     }> = []
-    const result:Array<leaf.Prototype> = []
-    let parent:Array<leaf.Prototype> = result
+    const bracketsParsed:Array<leaf.Prototype> = []
+    let parent:Array<leaf.Prototype> = bracketsParsed
 
     for (let i = 0; i < unparsed.length; i++) {
         const currentLeaf = unparsed[i]
@@ -38,14 +39,24 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
             } else
                 return Expect.error("comma_expected")
         else
-            if ( leaf.isUnparsed(currentLeaf)) {
+            if ( leaf.isUnparsed(currentLeaf))
                 if (/\W/.test(currentLeaf.value)) {
                     switch (currentLeaf.value) {
                         case ",":
                         case ";":
+                        case "+":
+                        case "-":
+                        case "*":
+                        case "/":
+                        case "%":
+                        case ">":
+                        case "<":
+                        case "=":
+                        case ".":
                             isObjectExpected = true
                             isPotentiallyArray = false
                             isPotentiallyFunction = false
+                            parent.push(new leaf.Unparsed(currentLeaf.value))
                             break
                         case " ":{
                             isPotentiallyArray = false
@@ -127,20 +138,29 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                             } else
                                 return Expect.error("unexpected_bracket_close")
                         }
-                        break
                         default:
                             return Expect.error("unexpected_letter")
                             break
                     }
+                } else { //alphanumeric
+                    // 数字処理
+                    if (/\d/.test(currentLeaf.value[0])) {
+                        if (/\d+/.test(currentLeaf.value)) {
+                            new leaf.NumberLiteral(parseInt(currentLeaf.value))
+                        } else
+                            return Expect.error("number_imparsable")
+                    }
+                    if (isObjectExpected) {
+                        isObjectExpected = false
+                        isPotentiallyFunction = true
+                        isPotentiallyArray = true
+                    } else
+                        return Expect.error("comma_expected")
                 }
-            } else { //alphanumeric
-                // 数字処理、後でやる
-                if (isObjectExpected) {
-                    isObjectExpected = false
-                    isPotentiallyFunction = true
-                    isPotentiallyArray = true
-                } else
-                    return Expect.error("comma_expected")
+            else {
+                console.error("during parsing brackets, parsed leaf found.")
+                return Expect.error("internal_error")
             }
     }
+    return Expect.result(bracketsParsed)
 }
