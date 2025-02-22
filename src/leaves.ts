@@ -25,11 +25,10 @@ export class Arithmetic {
 export class Func {
     type: "function" = "function"
     name: string
-    args: Array<Prototype>
+    args: Array<Prototype> = []
 
-    constructor(name: string, args: Array<Prototype>) {
+    constructor(name: string ) {
         this.name = name
-        this.args = args
     }
 }
 
@@ -40,6 +39,10 @@ export class StringLiteral {
     constructor(value: string) {
         this.value = value
     }
+}
+
+export function isString(l:Prototype):l is StringLiteral {
+    return l.type === "unparsed"
 }
 
 export class NumberLiteral {
@@ -60,6 +63,10 @@ export class Unparsed {
     }
 }
 
+export function isUnparsed(l:Prototype | undefined):l is Unparsed {
+    return l !== undefined && l.type === "unparsed";
+}
+
 export class RoundBracket {
     type: "round" = "round"
     children: Array<Prototype> = []
@@ -75,9 +82,5 @@ export class Origin {
     children: Array<Prototype> = []
 }
 
-export function isUnparsed(l:Prototype):l is Unparsed {
-    return l.type === "unparsed"
-}
-
 // 型エイリアスの定義
-export type Prototype = Coordinate | Arithmetic | Func | StringLiteral | NumberLiteral | Unparsed
+export type Prototype = Coordinate | Arithmetic | Func | StringLiteral | NumberLiteral | Unparsed | RoundBracket | SquareBracket | Origin

@@ -9,5 +9,5 @@ export function splitFirst(input: string, delimiter:string): Array<string> {
         // 区切り文字が見つからない場合は元の文字列をそのまま返す
         return [input]
     }
-    return [input.slice(0, index), input.slice(index + delimiter.length)]
+    return [input.slice(0, index), input.slice(index + delimiter.length).trimStart()]
 }
