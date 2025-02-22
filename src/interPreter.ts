@@ -3,7 +3,8 @@ import { parseArgs } from "./parseArgs"
 
 export function jasmineInterPrinter(text: string) {
 
-    const lines = text.split("\n")
+    const br = /\r\n|\n|\r/g
+    const lines = text.split(br)
     const vars = []
     const data = []
     const pics = []
@@ -13,35 +14,35 @@ export function jasmineInterPrinter(text: string) {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trimStart()
         const section = splitFirst(line, " ")
-        switch (section[0]) {
-            case "def":
-            case "end":
-            case "exit":
-            case "procedure":
-                const internalSection = splitFirst(section[1], " ")
-            case "let":
-            case "for":
-            case "while":
-            case "do":
-            case "if":
-            case "else":
+        console.log(i,section[0],section[1]?JSON.stringify(parseArgs(section[1])):"")
+        // switch (section[0]) {
+        //     case "def":
+        //     case "end":
+        //     case "exit":
+        //     case "procedure":
+        //         const internalSection = splitFirst(section[1], " ")
+        //     case "let":
+        //     case "for":
+        //     case "while":
+        //     case "do":
+        //     case "if":
+        //     case "else":
 
-                break
-            default:
-                const args = parseArgs(section[1])
-                switch (section[0]) {
-                    case "print":
-                        console.log()
-                        break
-                    case "pset":
+        //         break
+        //     default:
+        //         const args = parseArgs(section[1])
+        //         switch (section[0]) {
+        //             case "print":
+        //                 break
+        //             case "pset":
                         
-                        break
+        //                 break
                 
-                    default:
-                        break
-                }
-                break
-        }
+        //             default:
+        //                 break
+        //         }
+        //         break
+        // }
     }
 }
 

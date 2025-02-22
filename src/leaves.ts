@@ -42,7 +42,7 @@ export class StringLiteral {
 }
 
 export function isString(l:Prototype):l is StringLiteral {
-    return l.type === "unparsed"
+    return l.type === "string"
 }
 
 export class NumberLiteral {
