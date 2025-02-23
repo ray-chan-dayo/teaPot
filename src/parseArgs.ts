@@ -1,5 +1,5 @@
 import { brackets } from "./libs/brackets"
-import { Expect } from "./libs/expect.d"
+import { Expect } from "./libs/expect"
 import * as leaf from "./leaves"
 import { relationalOperators } from "./libs/miscs"
 
@@ -121,7 +121,7 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                     break
                 case " ":
                     isPotentiallyArray = false
-                break
+                    break
                 case "$":
                 case "@":{
                     const prev = parent.pop()
@@ -206,83 +206,4 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
     }
 
     return Expect.result(bracketsParsed)
-}
-
-function parseDecimals(bracketsParsed: Array<leaf.Prototype>) {
-    // 小数点の処理
-    for (let i = 0; i < bracketsParsed.length; i++) {
-        if (leaf.isUnparsed(bracketsParsed[i]) && (bracketsParsed[i] as leaf.Unparsed).value === ".") {
-            if ( !(0<i &&i<bracketsParsed.length-1) )
-                return Expect.error("unexpected_.")
-            const int = bracketsParsed[i-1]
-            const decimal = bracketsParsed[i+1]
-            if (!(
-                leaf.isNumber(int) &&
-                Number.isInteger(int.value) &&
-                leaf.isNumber(decimal) &&
-                Number.isInteger(int.value)
-            ))
-                return Expect.error("unexpected_.")
-            bracketsParsed.splice(i-1,2,
-                new leaf.NumberLiteral(Number(`${int}.${decimal}`))
-            )
-            i--
-            continue
-        }
-    }
-}
-
-function parseOperators(bracketsParsed: Array<leaf.Prototype>, operation: leaf.binaryOperator, isValid: Function) {
-    // 2項演算子の処理
-    // 小数点の処理を流用した。もし統合できそうならしたいなぁ
-    for (let i = 0; i < bracketsParsed.length; i++) {
-        if (leaf.isUnparsed(bracketsParsed[i]) && (bracketsParsed[i] as leaf.Unparsed).value === operation) {
-            if ( !(0<i &&i<bracketsParsed.length-1) )
-                return Expect.error("unexpected_operator")
-            const prev = bracketsParsed[i-1]
-            const nxt = bracketsParsed[i+1]
-            if (!(
-                isValid(prev) &&
-                isValid(nxt)
-            ))
-                return Expect.error("invalid_operation")
-            bracketsParsed.splice(i-1,2,
-                new leaf.binaryOperation(operation, prev, nxt)
-            )
-            i--
-            continue
-        }
-    }
-}
-
-function recursive(targetLeaves: Array<leaf.Prototype>, callback: Function) {
-    for (
-        const i:Array<number> = [0]
-        ,     arr:Array<Array<leaf.Prototype>>=[targetLeaves];
-        i[0] < targetLeaves.length;
-        i[arr.length-1]++
-    ) {
-        const depth = arr.length-1
-        if (i[depth] < arr[depth].length) {
-            callback(arr[depth])
-            arr.pop()
-            continue
-        }
-        const curr = arr[arr.length-1][i[arr.length-1]]
-
-        // 深度
-        if (leaf.isArray(curr)) {
-            arr.push(curr.elements)
-        }
-        if (leaf.isArrayElement(curr)) {
-            arr.push(curr.index)
-        }
-        if (leaf.isRoundBracket(curr)) {
-            arr.push(curr.children)
-        }
-        if (leaf.isFunc(curr)) {
-            arr.push(curr.args)
-        }
-    }
-    callback(targetLeaves)
 }
