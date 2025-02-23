@@ -9,13 +9,31 @@ export class Coordinate {
     }
 }
 
-export class Arithmetic {
-    type: "arithmetic" = "arithmetic"
-    operation: "+" | "-" | "*" | "/"
+export type binaryOperator = "*" |
+"/" |
+"%" |
+"+" |
+"-" |
+"=" |
+"<>" |
+">" |
+"<" |
+">=" |
+"<=" |
+"and" |
+"or" |
+"xor"
+
+export class binaryOperation {
+    type: "binary" = "binary"
+    operation:binaryOperator
     a:Prototype
     b:Prototype
 
-    constructor(operation: "+" | "-" | "*" | "/", a:Prototype, b:Prototype) {
+    constructor(operation:binaryOperator,
+        a:Prototype,
+        b:Prototype
+    ) {
         this.operation = operation
         this.a = a
         this.b = b
@@ -31,6 +49,9 @@ export class Func {
         this.name = name
     }
 }
+export function isFunc(l:Prototype | undefined):l is Func {
+    return l !== undefined && l.type === "function";
+}
 
 export class StringLiteral {
     type: "string" = "string"
@@ -40,7 +61,6 @@ export class StringLiteral {
         this.value = value
     }
 }
-
 export function isString(l:Prototype):l is StringLiteral {
     return l.type === "string"
 }
@@ -53,7 +73,6 @@ export class NumberLiteral {
         this.value = value
     }
 }
-
 export function isNumber(l:Prototype | undefined):l is NumberLiteral {
     return l !== undefined && l.type === "number";
 }
@@ -75,10 +94,16 @@ export class RoundBracket {
     type: "round" = "round"
     children: Array<Prototype> = []
 }
+export function isRoundBracket(l:Prototype | undefined):l is RoundBracket {
+    return l !== undefined && l.type === "round";
+}
 
 export class ArrayLiteral {
     type: "array" = "array"
     elements: Array<Prototype> = []
+}
+export function isArray(l:Prototype | undefined):l is ArrayLiteral {
+    return l !== undefined && l.type === "array";
 }
 
 export class ArrayElement {
@@ -89,30 +114,34 @@ export class ArrayElement {
         this.arrayName = arrayName
     }
 }
+export function isArrayElement(l:Prototype | undefined):l is ArrayElement {
+    return l !== undefined && l.type === "elem";
+}
+
 
 export class Origin {
     type: "origin" = "origin"
     children: Array<Prototype> = []
 }
 
+export type logicalOperator = "not" | "and" | "or"
 export class UnparsedLogial {
     type: "unparsedlogic" = "unparsedlogic"
-    operation: "not" | "and" | "or"
-    constructor(operation: "not" | "and" | "or") {
-        this.operation = operation
+    operation: logicalOperator
+    constructor(operation: logicalOperator) {
+        this.operation = operation.toLowerCase() as logicalOperator
     }
 }
-
 export function isUnparsedLogical(l:Prototype | undefined):l is UnparsedLogial {
     return l !== undefined && l.type === "unparsedlogic";
 }
-export function parsableAsLogical (s:string):s is "not" | "and" | "or" {
-    return ["not","and","or"].includes(s)
+export function isLogicalOperator (s:string):s is logicalOperator {
+    return ["not","and","or"].includes(s.toLowerCase())
 }
 
 // 型エイリアスの定義
 export type Prototype = Coordinate
-| Arithmetic
+| binaryOperation
 | Func
 | StringLiteral
 | NumberLiteral
@@ -123,7 +152,7 @@ export type Prototype = Coordinate
 | Origin
 | UnparsedLogial
 
-export type Mathable = Arithmetic
+export type Mathable = binaryOperation
 | Func
 | NumberLiteral
 | Unparsed

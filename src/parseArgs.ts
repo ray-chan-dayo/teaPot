@@ -1,7 +1,7 @@
 import { brackets } from "./libs/brackets"
 import { Expect } from "./libs/expect.d"
 import * as leaf from "./leaves"
-import { logicalOperators, relationalOperators } from "./libs/miscs"
+import { relationalOperators } from "./libs/miscs"
 
 export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
     
@@ -88,11 +88,11 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                 isPotentiallyFunction = false
                 isPotentiallyArray = false
                 parent.push(new leaf.NumberLiteral(parseInt(currentLeaf.value)))
-            } else if (logicalOperators.includes(currentLeaf.value.toLowerCase())) {
+            } else if (leaf.isLogicalOperator(currentLeaf.value)) {
                 // 論理
                 isPotentiallyFunction = false
                 isPotentiallyArray = false
-                parent.push(new leaf.UnparsedLogial(currentLeaf.value.toLowerCase() as "not" | "and" | "or"))
+                parent.push(new leaf.UnparsedLogial(currentLeaf.value))
             } else {
                 isPotentiallyFunction = true
                 isPotentiallyArray = true
@@ -205,8 +205,12 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
             }
     }
 
+    return Expect.result(bracketsParsed)
+}
+
+function parseDecimals(bracketsParsed: Array<leaf.Prototype>) {
+    // 小数点の処理
     for (let i = 0; i < bracketsParsed.length; i++) {
-        // 小数点の処理
         if (leaf.isUnparsed(bracketsParsed[i]) && (bracketsParsed[i] as leaf.Unparsed).value === ".") {
             if ( !(0<i &&i<bracketsParsed.length-1) )
                 return Expect.error("unexpected_.")
@@ -226,6 +230,59 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
             continue
         }
     }
+}
 
-    return Expect.result(bracketsParsed)
+function parseOperators(bracketsParsed: Array<leaf.Prototype>, operation: leaf.binaryOperator, isValid: Function) {
+    // 2項演算子の処理
+    // 小数点の処理を流用した。もし統合できそうならしたいなぁ
+    for (let i = 0; i < bracketsParsed.length; i++) {
+        if (leaf.isUnparsed(bracketsParsed[i]) && (bracketsParsed[i] as leaf.Unparsed).value === operation) {
+            if ( !(0<i &&i<bracketsParsed.length-1) )
+                return Expect.error("unexpected_operator")
+            const prev = bracketsParsed[i-1]
+            const nxt = bracketsParsed[i+1]
+            if (!(
+                isValid(prev) &&
+                isValid(nxt)
+            ))
+                return Expect.error("invalid_operation")
+            bracketsParsed.splice(i-1,2,
+                new leaf.binaryOperation(operation, prev, nxt)
+            )
+            i--
+            continue
+        }
+    }
+}
+
+function recursive(targetLeaves: Array<leaf.Prototype>, callback: Function) {
+    for (
+        const i:Array<number> = [0]
+        ,     arr:Array<Array<leaf.Prototype>>=[targetLeaves];
+        i[0] < targetLeaves.length;
+        i[arr.length-1]++
+    ) {
+        const depth = arr.length-1
+        if (i[depth] < arr[depth].length) {
+            callback(arr[depth])
+            arr.pop()
+            continue
+        }
+        const curr = arr[arr.length-1][i[arr.length-1]]
+
+        // 深度
+        if (leaf.isArray(curr)) {
+            arr.push(curr.elements)
+        }
+        if (leaf.isArrayElement(curr)) {
+            arr.push(curr.index)
+        }
+        if (leaf.isRoundBracket(curr)) {
+            arr.push(curr.children)
+        }
+        if (leaf.isFunc(curr)) {
+            arr.push(curr.args)
+        }
+    }
+    callback(targetLeaves)
 }
