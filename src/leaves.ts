@@ -95,12 +95,19 @@ export class Origin {
     children: Array<Prototype> = []
 }
 
-export class UnparsedLogialOperator {
+export class UnparsedLogial {
     type: "unparsedlogic" = "unparsedlogic"
     operation: "not" | "and" | "or"
     constructor(operation: "not" | "and" | "or") {
         this.operation = operation
     }
+}
+
+export function isUnparsedLogical(l:Prototype | undefined):l is UnparsedLogial {
+    return l !== undefined && l.type === "unparsedlogic";
+}
+export function parsableAsLogical (s:string):s is "not" | "and" | "or" {
+    return ["not","and","or"].includes(s)
 }
 
 // 型エイリアスの定義
@@ -114,7 +121,7 @@ export type Prototype = Coordinate
 | ArrayLiteral
 | ArrayElement
 | Origin
-| UnparsedLogialOperator
+| UnparsedLogial
 
 export type Mathable = Arithmetic
 | Func

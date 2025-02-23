@@ -92,7 +92,7 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                 // 論理
                 isPotentiallyFunction = false
                 isPotentiallyArray = false
-                parent.push(new leaf.UnparsedLogialOperator(currentLeaf.value.toLowerCase() as "not" | "and" | "or"))
+                parent.push(new leaf.UnparsedLogial(currentLeaf.value.toLowerCase() as "not" | "and" | "or"))
             } else {
                 isPotentiallyFunction = true
                 isPotentiallyArray = true

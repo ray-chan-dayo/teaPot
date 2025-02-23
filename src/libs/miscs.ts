@@ -20,9 +20,3 @@ export const relationalOperators = [
     ">=",
     "<=",
 ]
-
-export const logicalOperators = [
-    "not",
-    "and",
-    "or"
-]
