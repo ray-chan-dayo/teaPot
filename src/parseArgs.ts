@@ -1,7 +1,7 @@
 import { brackets } from "./libs/brackets"
 import { Expect } from "./libs/expect.d"
 import * as leaf from "./leaves"
-import { validRelationalOperators } from "./libs/miscs"
+import { logicalOperators, relationalOperators } from "./libs/miscs"
 
 export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
     
@@ -29,24 +29,6 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
         const currentLeaf = bracketsParsed[i]
         if (leaf.isUnparsed(currentLeaf)) {
             switch (currentLeaf.value[0]) {
-                case ".":
-                    // 小数点の処理
-                    if (!(
-                        0<i &&
-                        leaf.isNumber(bracketsParsed[i-1]) &&
-                        i<bracketsParsed.length-1 &&
-                        leaf.isNumber(bracketsParsed[i+1])
-                    ))
-                        return Expect.error("unexpected_.")
-                    bracketsParsed.splice(i-1,2,
-                        new leaf.NumberLiteral(Number(`${
-                            (bracketsParsed[i-1] as leaf.NumberLiteral).value
-                        }.${
-                            (bracketsParsed[i+1] as leaf.NumberLiteral).value
-                        }`))
-                    )
-                    i--
-                    continue
                 case ">":
                 case "<":
                 case "=":
@@ -73,10 +55,10 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
 }
 
 function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Prototype>> {
+
     // bracket parser
     let isPotentiallyFunction: boolean = false
     ,   isPotentiallyArray: boolean = false
-    ,   isObjectExpected: boolean = true
     let currentBrackets:Array<{
         bracketType: ")" | "]" | "}",
         parent: Array<leaf.Prototype>
@@ -87,9 +69,6 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
         const currentLeaf = unparsed[i]
         
         if (leaf.isString(currentLeaf)) {
-            if (!isObjectExpected)
-                return Expect.error("comma_expected")
-            isObjectExpected = false
             isPotentiallyFunction = false
             isPotentiallyArray = false
             parent.push(new leaf.StringLiteral(currentLeaf.value))
@@ -106,21 +85,26 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                 // 数字処理
                 if (!/\d+/.test(currentLeaf.value))
                     return Expect.error("number_imparsable")
+                isPotentiallyFunction = false
+                isPotentiallyArray = false
                 parent.push(new leaf.NumberLiteral(parseInt(currentLeaf.value)))
+            } else if (logicalOperators.includes(currentLeaf.value.toLowerCase())) {
+                // 論理
+                isPotentiallyFunction = false
+                isPotentiallyArray = false
+                parent.push(new leaf.UnparsedLogialOperator(currentLeaf.value.toLowerCase() as "not" | "and" | "or"))
             } else {
-                if (!isObjectExpected)
-                    return Expect.error("comma_expected")
-                isObjectExpected = false
                 isPotentiallyFunction = true
                 isPotentiallyArray = true
                 parent.push(new leaf.Unparsed(currentLeaf.value))
             }
+
         else
             switch (currentLeaf.value[0]) {
                 case ">":
                 case "<":
                 case "=":
-                    if (!validRelationalOperators.includes(currentLeaf.value))
+                    if (!relationalOperators.includes(currentLeaf.value))
                         return Expect.error("invalid_relational")
                     // 落下
                 case ",":
@@ -131,22 +115,21 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                 case "/":
                 case "%":
                 case ".":
-                    // if (isObjectExpected)
-                    //     return Expect.error("invalid_operator")
-                    isObjectExpected = true
                     isPotentiallyArray = false
                     isPotentiallyFunction = false
                     parent.push(new leaf.Unparsed(currentLeaf.value))
                     break
-                case " ":{
+                case " ":
                     isPotentiallyArray = false
-                }break
+                break
                 case "$":
-                case "@":
+                case "@":{
                     const prev = parent.pop()
-                    if (leaf.isUnparsed(prev) && /\w+/.test(prev.value))
+                    if (leaf.isUnparsed(prev) && !/\W/.test(prev.value))
                         parent.push(new leaf.Unparsed(prev.value + currentLeaf.value))
-                    break
+                    else
+                        return Expect.error("invalid_$@")
+                }break
                 case "(":{
                     let currentParent: Array<leaf.Prototype>
                     if (isPotentiallyFunction) {
@@ -163,8 +146,6 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                         currentParent = (parent[parent.length-1] as leaf.Func).args
                     } else{
                         // 丸括弧の処理
-                        if (!isObjectExpected)
-                            return Expect.error("unexpected_(")
                         parent.push(new leaf.RoundBracket())
                         currentParent = (parent[parent.length-1] as leaf.RoundBracket).children
                     }
@@ -175,7 +156,6 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                     })
                     parent = currentParent
 
-                    isObjectExpected = true
                     isPotentiallyArray = false
                     isPotentiallyFunction = false
                 }break
@@ -194,8 +174,6 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                         // 今pushしたばかりのleafを取得
                         currentParent = (parent[parent.length-1] as leaf.ArrayElement).index
                     } else {
-                        if (!isObjectExpected)
-                            return Expect.error("unexpected_[")
                         // 配列の生成
                         parent.push(new leaf.ArrayLiteral())
                         currentParent = (parent[parent.length-1] as leaf.ArrayLiteral).elements
@@ -207,7 +185,6 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                     })
                     parent = currentParent
 
-                    isObjectExpected = false
                     isPotentiallyArray = true
                     isPotentiallyFunction = false
                 }break
@@ -227,5 +204,28 @@ function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Proto
                     return Expect.error("unexpected_letter")
             }
     }
+
+    for (let i = 0; i < bracketsParsed.length; i++) {
+        // 小数点の処理
+        if (leaf.isUnparsed(bracketsParsed[i]) && (bracketsParsed[i] as leaf.Unparsed).value === ".") {
+            if ( !(0<i &&i<bracketsParsed.length-1) )
+                return Expect.error("unexpected_.")
+            const int = bracketsParsed[i-1]
+            const decimal = bracketsParsed[i+1]
+            if (!(
+                leaf.isNumber(int) &&
+                Number.isInteger(int.value) &&
+                leaf.isNumber(decimal) &&
+                Number.isInteger(int.value)
+            ))
+                return Expect.error("unexpected_.")
+            bracketsParsed.splice(i-1,2,
+                new leaf.NumberLiteral(Number(`${int}.${decimal}`))
+            )
+            i--
+            continue
+        }
+    }
+
     return Expect.result(bracketsParsed)
 }

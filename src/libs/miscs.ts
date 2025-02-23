@@ -12,11 +12,17 @@ export function splitFirst(input: string, delimiter:string): Array<string> {
     return [input.slice(0, index), input.slice(index + delimiter.length).trimStart()]
 }
 
-export const validRelationalOperators = [
+export const relationalOperators = [
     "=",
     "<>",
     ">",
     "<",
     ">=",
     "<=",
+]
+
+export const logicalOperators = [
+    "not",
+    "and",
+    "or"
 ]

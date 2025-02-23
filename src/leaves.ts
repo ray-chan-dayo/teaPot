@@ -95,6 +95,14 @@ export class Origin {
     children: Array<Prototype> = []
 }
 
+export class UnparsedLogialOperator {
+    type: "unparsedlogic" = "unparsedlogic"
+    operation: "not" | "and" | "or"
+    constructor(operation: "not" | "and" | "or") {
+        this.operation = operation
+    }
+}
+
 // 型エイリアスの定義
 export type Prototype = Coordinate
 | Arithmetic
@@ -106,6 +114,7 @@ export type Prototype = Coordinate
 | ArrayLiteral
 | ArrayElement
 | Origin
+| UnparsedLogialOperator
 
 export type Mathable = Arithmetic
 | Func
