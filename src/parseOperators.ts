@@ -2,7 +2,7 @@
 import * as leaf from "./leaves"
 import { Expect } from "./libs/expect"
 
-export function parseDecimals(bracketsParsed: Array<leaf.Prototype>) {
+export function parseDecimals(bracketsParsed: Array<leaf.Prototype>):Expect<void> {
     //wrap function
     function callbackfn(target:Array<leaf.Prototype>) {
         // 小数点の処理
@@ -27,7 +27,7 @@ export function parseDecimals(bracketsParsed: Array<leaf.Prototype>) {
             }
         }
     }
-    recursive(bracketsParsed, callbackfn)
+    return recursive(bracketsParsed, callbackfn)
 }
 
 export function parseOperators(target: Array<leaf.Prototype>, operation: leaf.binaryOperator, isValid: Function):Expect<void> {
