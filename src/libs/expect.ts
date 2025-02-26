@@ -18,7 +18,8 @@ class PotError {
 
 const Expect = {
     result: <T>(value: T) => new Success<T>(value),
-    error: (errMsg: string) => new PotError(errMsg)
+    error: (errMsg: string) => new PotError(errMsg),
+    isError: (e:Expect<any>):e is PotError => !e.success
 }
 
 export { Expect }

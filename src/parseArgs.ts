@@ -1,10 +1,11 @@
-import { brackets } from "./libs/brackets"
-import { Expect } from "./libs/expect"
 import * as leaf from "./leaves"
-import { relationalOperators } from "./libs/miscs"
+import { Expect } from "./libs/expect"
+import { betterThanRecursive } from "./betterThanRecursive"
+import { parseBrackets } from "./parseBrackets"
+import { parseOperators } from "./parseOperators"
 
-export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
-    
+export function parseArgs( input: string, typeArray: Array<leaf.potType> ): Expect<Array<leaf.Prototype>> {
+
     const ripped = input.split('"')
     if (ripped.length % 2 !== 1)
         return Expect.error("invalid_quote")
@@ -14,196 +15,115 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
         if (i%2 === 1)
             unparsed.push(new leaf.StringLiteral(ripped[i]))
         else {
-            ripped[i].match(/\w+|[<>=]+|./g)?.forEach(e=>unparsed.push(new leaf.Unparsed(e)))
+            ripped[i].match(/\w+|[<>=]+|./g)?.forEach(e=>unparsed.push(new leaf.Unparsed(e.toLowerCase())))
         }
     }
 
-    const parserResult = parseBrackets(unparsed)
-    if (!parserResult.success)
-        return Expect.error("")
-    const bracketsParsed = parserResult.value
-
+    const bracketResult = parseBrackets(unparsed)
+    if (!bracketResult.success)
+        return bracketResult
+    const parseTarget = bracketResult.value
+    const isArithmeticallyValid = (a: Array<leaf.Prototype>)=>leaf.mightBeNumber(a[0]) && leaf.mightBeNumber(a[1])
+    const isValid = (a: Array<leaf.Prototype>)=>leaf.mightBeNumber(a[0]) && leaf.mightBeNumber(a[1]) || leaf.mightBeString(a[0]) && leaf.mightBeString(a[1])
+    const parseResults = [
+        parseDecimals(parseTarget),
+        parseMinus(parseTarget),
+        parseOperators(parseTarget, ["*","/"], [isArithmeticallyValid, isArithmeticallyValid]),
+        parseOperators(parseTarget, ["%"], [isArithmeticallyValid]),
+        parseOperators(parseTarget, ["+","-"], [isValid, isArithmeticallyValid]),
+        parseOperators(parseTarget, ["=","<>",">","<",">=","<="], [isValid, isValid, isArithmeticallyValid, isArithmeticallyValid, isArithmeticallyValid, isArithmeticallyValid])
+    ]
+    // エラー処理
+    for (let i = 0; i < parseResults.length; i++) {
+        const e = parseResults[i]
+        if ( Expect.isError(e) ) return e
+    }
+    
     let isObjectExpected: boolean = true
 
-    for (let i = 0; i < bracketsParsed.length; i++) {
-        const currentLeaf = bracketsParsed[i]
-        if (leaf.isUnparsed(currentLeaf)) {
-            switch (currentLeaf.value[0]) {
-                case ">":
-                case "<":
-                case "=":
-                case ",":
-                case "+":
-                case "*":
-                case "/":
-                case "%":
-                    if (isObjectExpected)
-                        return Expect.error("invalid_operator")
-                    // 落下
-                case "-":
-                    isObjectExpected = true
-                    break
-                default:
-                    break
-            }
-        } else {
-            if (!isObjectExpected)
-                return Expect.error("comma_expected")
-            isObjectExpected = false
-        }
-    }
+    // カンマ処理
 }
 
-function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<leaf.Prototype>> {
-
-    // bracket parser
-    let isPotentiallyFunction: boolean = false
-    ,   isPotentiallyArray: boolean = false
-    let currentBrackets:Array<{
-        bracketType: ")" | "]" | "}",
-        parent: Array<leaf.Prototype>
-    }> = []
-    const bracketsParsed:Array<leaf.Prototype> = []
-    let parent:Array<leaf.Prototype> = bracketsParsed
-    for (let i = 0; i < unparsed.length; i++) {
-        const currentLeaf = unparsed[i]
-        
-        if (leaf.isString(currentLeaf)) {
-            isPotentiallyFunction = false
-            isPotentiallyArray = false
-            parent.push(new leaf.StringLiteral(currentLeaf.value))
-            continue
-        }
-
-        if ( !leaf.isUnparsed(currentLeaf)) {
-            console.error(`during parsing brackets, parsed leaf found: ${currentLeaf}`)
-            return Expect.error("internal_error")
-        }
-        
-        if (!/\W/.test(currentLeaf.value)) // alphanumeric
-            if (/\d/.test(currentLeaf.value[0])) {
-                // 数字処理
-                if (!/\d+/.test(currentLeaf.value))
-                    return Expect.error("number_imparsable")
-                isPotentiallyFunction = false
-                isPotentiallyArray = false
-                parent.push(new leaf.NumberLiteral(parseInt(currentLeaf.value)))
-            } else if (leaf.isLogicalOperator(currentLeaf.value)) {
-                // 論理
-                isPotentiallyFunction = false
-                isPotentiallyArray = false
-                parent.push(new leaf.UnparsedLogial(currentLeaf.value))
-            } else {
-                isPotentiallyFunction = true
-                isPotentiallyArray = true
-                parent.push(new leaf.Unparsed(currentLeaf.value))
+function parseDecimals(bracketsParsed: Array<leaf.Prototype>):Expect<void> {
+    //wrap function
+    function callbackfn(target:Array<leaf.Prototype>) {
+        // 小数点の処理
+        for (let i = 0; i < target.length; i++) {
+            if (leaf.isUnparsed(target[i]) && (target[i] as leaf.Unparsed).value === ".") {
+                if ( !(0<i &&i<target.length-1) )
+                    return Expect.error("unexpected_.")
+                const int = target[i-1]
+                const decimal = target[i+1]
+                if (!(
+                    leaf.isNumber(int) &&
+                    Number.isInteger(int.value) &&
+                    leaf.isNumber(decimal) &&
+                    Number.isInteger(int.value)
+                ))
+                    return Expect.error("unexpected_.")
+                    target.splice(i-1,3,
+                        new leaf.NumberLiteral(Number(`${int}.${decimal}`))
+                    )
+                i--
+                continue
             }
-
-        else
-            switch (currentLeaf.value[0]) {
-                case ">":
-                case "<":
-                case "=":
-                    if (!relationalOperators.includes(currentLeaf.value))
-                        return Expect.error("invalid_relational")
-                    // 落下
-                case ",":
-                case ";":
-                case "+":
-                case "-":
-                case "*":
-                case "/":
-                case "%":
-                case ".":
-                    isPotentiallyArray = false
-                    isPotentiallyFunction = false
-                    parent.push(new leaf.Unparsed(currentLeaf.value))
-                    break
-                case " ":
-                    isPotentiallyArray = false
-                    break
-                case "$":
-                case "@":{
-                    const prev = parent.pop()
-                    if (leaf.isUnparsed(prev) && !/\W/.test(prev.value))
-                        parent.push(new leaf.Unparsed(prev.value + currentLeaf.value))
-                    else
-                        return Expect.error("invalid_$@")
-                }break
-                case "(":{
-                    let currentParent: Array<leaf.Prototype>
-                    if (isPotentiallyFunction) {
-                        // function化の処理
-                        // 下の配列添え字の処理と統合した方がスマートかな？後でやってみたい。
-                        const prev = parent.pop()
-                        if (!leaf.isUnparsed(prev)) {
-                            console.error(`isPotentiallyFunction is true but prev was not unparsed. Got: ${prev}`)
-                            return Expect.error("internal_error")
-                        }
-                        const funcName = prev.value
-                        parent.push(new leaf.Func(funcName))
-                        // 今pushしたばかりのleafを取得
-                        currentParent = (parent[parent.length-1] as leaf.Func).args
-                    } else{
-                        // 丸括弧の処理
-                        parent.push(new leaf.RoundBracket())
-                        currentParent = (parent[parent.length-1] as leaf.RoundBracket).children
-                    }
-                    // 閉じ括弧の処理
-                    currentBrackets.push({
-                        bracketType: ")",
-                        parent: currentParent
-                    })
-                    parent = currentParent
-
-                    isPotentiallyArray = false
-                    isPotentiallyFunction = false
-                }break
-
-                case "[":{
-                    let currentParent: Array<leaf.Prototype>
-                    if (isPotentiallyArray) {
-                        // 添え字の処理 (functionのを流用)
-                        const prev = parent.pop()
-                        if (!leaf.isUnparsed(prev)) {
-                            console.error(`isPotentiallyArray is true but prev was not unparsed. Got: ${prev}`)
-                            return Expect.error("internal_error")
-                        }
-                        const arrayName = prev.value
-                        parent.push(new leaf.ArrayElement(arrayName))
-                        // 今pushしたばかりのleafを取得
-                        currentParent = (parent[parent.length-1] as leaf.ArrayElement).index
-                    } else {
-                        // 配列の生成
-                        parent.push(new leaf.ArrayLiteral())
-                        currentParent = (parent[parent.length-1] as leaf.ArrayLiteral).elements
-                    }
-                    // 閉じ括弧の処理
-                    currentBrackets.push({
-                        bracketType: "]",
-                        parent: currentParent
-                    })
-                    parent = currentParent
-
-                    isPotentiallyArray = true
-                    isPotentiallyFunction = false
-                }break
-                case ")":
-                case "]":{
-                    // 閉じ括弧の処理
-                    if ( currentLeaf.value !== currentBrackets[0].bracketType ) 
-                        return Expect.error("unexpected_bracket_close")
-                    currentBrackets.pop()
-                    if (currentBrackets[0])
-                        parent = currentBrackets[currentBrackets.length - 1].parent
-                    else
-                        parent = bracketsParsed
-                }break
-                default:
-                    // console.error(`unexpected Special Letter: ${currentLeaf.value}`)
-                    return Expect.error("unexpected_letter")
-            }
+        }
     }
+    return betterThanRecursive(bracketsParsed, callbackfn)
+}
 
-    return Expect.result(bracketsParsed)
+function parseMinus(target: Array<leaf.Prototype>):Expect<void> {
+    // wrap function
+    function callbackfn(target: Array<leaf.Prototype>) {
+        // 2項演算子の処理を流用した。もし統合できそうならしたいなぁ
+        for (let i = 0; i < target.length; i++) {
+            // -のパース
+            if ( leaf.isUnparsed(target[i]) && (target[i] as leaf.Unparsed).value === "-" ) {
+                if (!( i<target.length-1 && leaf.mightBeNumber(target[i+1]) ))
+                    return Expect.error("invalid_-")
+                if (( 0<i && leaf.mightBeNumber(target[i-1]) ))
+                    continue
+                // マイナス化処理
+                if (leaf.isNumber(target[i+1]))
+                    target.splice(i,2,
+                        new leaf.NumberLiteral((target[i-1] as leaf.NumberLiteral).value * -1)
+                    )
+                else
+                    target.splice(i,2,
+                        new leaf.binaryOperation("*", new leaf.NumberLiteral(-1), target[i-1])
+                    )
+                i-=2
+            }
+        }
+    }
+    return betterThanRecursive(target, callbackfn)
+}
+
+function parseNot(target: Array<leaf.Prototype>):Expect<void> {
+    // wrap function
+    function callbackfn(target: Array<leaf.Prototype>) {
+        // -の処理を流用した。もし統合できそうならしたいなぁ
+        for (let i = 0; i < target.length; i++) {
+            // -のパース
+            if ( leaf.isUnparsed(target[i]) && (target[i] as leaf.Unparsed).value === "-" ) {
+                if (!( i<target.length-1 && leaf.mightBeNumber(target[i+1]) ))
+                    return Expect.error("invalid_not")
+                // マイナス化処理
+                target.splice(i,2,
+                    new leaf.BitNot(target[i+1]))
+                i-=2
+            }
+        }
+    }
+    return betterThanRecursive(target, callbackfn)
+}
+
+function checkComma(target: Array<leaf.Prototype>):Expect<void> {
+    function callbackfn(target:Array<leaf.Prototype>) {
+        let isObjectExpected = true
+        target.forEach(e => {
+            if (e.type === fun)
+                return Expect.error("comma_expected")
+        })
+    }
 }

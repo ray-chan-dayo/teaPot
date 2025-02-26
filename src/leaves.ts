@@ -1,14 +1,31 @@
-export class Coordinate {
-    type: "coordinate" = "coordinate"
-    x: number
-    y: number
+export type potType = "string" | "number" | "array" | undefined
 
-    constructor(x: number, y: number) {
-        this.x = x
-        this.y = y
+export class BitNot {
+    type: "not" = "not"
+    pottype: potType = "number"
+    target: Prototype
+
+    constructor(target: Prototype) {
+        this.target = target
     }
 }
 
+const binaryOperators = [
+    "*",
+    "/",
+    "%",
+    "+",
+    "-",
+    "=",
+    "<>",
+    ">",
+    "<",
+    ">=",
+    "<=",
+    "and",
+    "or",
+    "xor"
+]
 export type binaryOperator = "*" |
 "/" |
 "%" |
@@ -23,9 +40,12 @@ export type binaryOperator = "*" |
 "and" |
 "or" |
 "xor"
-
+export function isBinaryOperator(s:string):s is binaryOperator {
+    return binaryOperators.includes(s)
+}
 export class binaryOperation {
     type: "binary" = "binary"
+    pottype: potType
     operation:binaryOperator
     a:Prototype
     b:Prototype
@@ -39,9 +59,13 @@ export class binaryOperation {
         this.b = b
     }
 }
+export function isBinaryOperation(l:Prototype | undefined):l is binaryOperation {
+    return l !== undefined && l.type === "binary";
+}
 
 export class Func {
     type: "function" = "function"
+    pottype: potType
     name: string
     args: Array<Prototype> = []
 
@@ -55,6 +79,7 @@ export function isFunc(l:Prototype | undefined):l is Func {
 
 export class StringLiteral {
     type: "string" = "string"
+    pottype: potType
     value: string
 
     constructor(value: string) {
@@ -67,6 +92,7 @@ export function isString(l:Prototype):l is StringLiteral {
 
 export class NumberLiteral {
     type: "number" = "number"
+    pottype: potType
     value: number
 
     constructor(value: number) {
@@ -79,6 +105,7 @@ export function isNumber(l:Prototype | undefined):l is NumberLiteral {
 
 export class Unparsed {
     type: "unparsed" = "unparsed"
+    pottype: potType
     value: string
 
     constructor(value: string) {
@@ -92,6 +119,7 @@ export function isUnparsed(l:Prototype | undefined):l is Unparsed {
 
 export class RoundBracket {
     type: "round" = "round"
+    pottype: potType
     children: Array<Prototype> = []
 }
 export function isRoundBracket(l:Prototype | undefined):l is RoundBracket {
@@ -100,6 +128,7 @@ export function isRoundBracket(l:Prototype | undefined):l is RoundBracket {
 
 export class ArrayLiteral {
     type: "array" = "array"
+    pottype: potType
     elements: Array<Prototype> = []
 }
 export function isArray(l:Prototype | undefined):l is ArrayLiteral {
@@ -108,6 +137,7 @@ export function isArray(l:Prototype | undefined):l is ArrayLiteral {
 
 export class ArrayElement {
     type: "elem" = "elem"
+    pottype: potType
     arrayName: string
     index: Array<Prototype> = []
     constructor(arrayName:string) {
@@ -121,26 +151,46 @@ export function isArrayElement(l:Prototype | undefined):l is ArrayElement {
 
 export class Origin {
     type: "origin" = "origin"
+    pottype: potType
     children: Array<Prototype> = []
 }
 
 export type logicalOperator = "not" | "and" | "or"
 export class UnparsedLogial {
     type: "unparsedlogic" = "unparsedlogic"
+    pottype: potType
     operation: logicalOperator
     constructor(operation: logicalOperator) {
-        this.operation = operation.toLowerCase() as logicalOperator
+        this.operation = operation as logicalOperator
     }
 }
 export function isUnparsedLogical(l:Prototype | undefined):l is UnparsedLogial {
     return l !== undefined && l.type === "unparsedlogic";
 }
 export function isLogicalOperator (s:string):s is logicalOperator {
-    return ["not","and","or"].includes(s.toLowerCase())
+    return ["not","and","or"].includes(s)
+}
+
+export function mightBeNumber(l:Prototype) {
+    return (
+        isBinaryOperation(l) ||
+        isFunc(l) && l.name[l.name.length-1]!=="$" && l.name[l.name.length-1]!=="@" ||
+        isNumber(l) ||
+        isUnparsed(l) && l.value[l.value.length-1]!=="$" && l.value[l.value.length-1]!=="@"||
+        isArrayElement(l)
+    )
+}
+export function mightBeString(l:Prototype) {
+    return(
+        isBinaryOperation(l) && l.operation === "+" ||
+        isFunc(l) && l.name[l.name.length-1]==="$" ||
+        isUnparsed(l) && l.value[l.value.length-1]==="$" ||
+        isArrayElement(l)
+    )
 }
 
 // 型エイリアスの定義
-export type Prototype = Coordinate
+export type Prototype = // Coordinate
 | binaryOperation
 | Func
 | StringLiteral
@@ -151,9 +201,4 @@ export type Prototype = Coordinate
 | ArrayElement
 | Origin
 | UnparsedLogial
-
-export type Mathable = binaryOperation
-| Func
-| NumberLiteral
-| Unparsed
-| ArrayElement
+| BitNot
