@@ -10,9 +10,9 @@ export function betterThanRecursive(targetLeaves: Array<leaf.Prototype>, callbac
         i[arr.length-1]++
     ) {
         const depth = arr.length-1
-        if (i[depth] < arr[depth].length) {
+        if (!(i[depth] < arr[depth].length)) {
             const ret = callback(arr[depth])
-            if (!ret.success)
+            if (ret && !ret.success)
                 return ret
             arr.pop()
             continue
@@ -37,7 +37,9 @@ export function betterThanRecursive(targetLeaves: Array<leaf.Prototype>, callbac
         }
     }
     const ret = callback(targetLeaves)
-    if (!ret.success)
+    if (ret && !ret.success)
         return ret
     return Expect.result(undefined)
 }
+
+// function

@@ -24,13 +24,17 @@ export function parseOperators(target: Array<leaf.Prototype>, operation: Array<l
                     opeidx = operation.indexOf(currentLeaf.value)
                 if ( (leaf.isUnparsedLogical(currentLeaf)) && leaf.isBinaryOperator(currentLeaf.operation) )
                     opeidx = operation.indexOf(currentLeaf.operation)
-                if (opeidx) {
+                if (opeidx && opeidx !== -1) {
+                    console.log(target)
                     if ( !( 0<i && i<target.length-1 ) )
                         return Expect.error("invalid_operator_placement")
                     const prev = target[i-1]
                     const nxt = target[i+1]
                     if (!( isValid[opeidx](prev, nxt) ))
+                        // debug
+                    {console.log("watchMe");console.log(prev);console.log(nxt)
                         return Expect.error("invalid_operation")
+                    }
                     target.splice(i-1,3,
                         new leaf.binaryOperation(operation[opeidx], prev, nxt)
                     )

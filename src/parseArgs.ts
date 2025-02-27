@@ -4,7 +4,7 @@ import { betterThanRecursive } from "./betterThanRecursive"
 import { parseBrackets } from "./parseBrackets"
 import { parseOperators } from "./parseOperators"
 
-export function parseArgs( input: string, typeArray: Array<leaf.potType> ): Expect<Array<leaf.Prototype>> {
+export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): Expect<Array<leaf.Prototype>> {
 
     const ripped = input.split('"')
     if (ripped.length % 2 !== 1)
@@ -31,6 +31,7 @@ export function parseArgs( input: string, typeArray: Array<leaf.potType> ): Expe
         parseOperators(parseTarget, ["*","/"], [isArithmeticallyValid, isArithmeticallyValid]),
         parseOperators(parseTarget, ["%"], [isArithmeticallyValid]),
         parseOperators(parseTarget, ["+","-"], [isValid, isArithmeticallyValid]),
+        Expect.result(console.log(`README: ${JSON.stringify(parseTarget)}`)),
         parseOperators(parseTarget, ["=","<>",">","<",">=","<="], [isValid, isValid, isArithmeticallyValid, isArithmeticallyValid, isArithmeticallyValid, isArithmeticallyValid])
     ]
     // エラー処理
@@ -39,6 +40,8 @@ export function parseArgs( input: string, typeArray: Array<leaf.potType> ): Expe
         if ( Expect.isError(e) ) return e
     }
     
+    return Expect.result(parseTarget)
+
     let isObjectExpected: boolean = true
 
     // カンマ処理
@@ -80,7 +83,10 @@ function parseMinus(target: Array<leaf.Prototype>):Expect<void> {
             // -のパース
             if ( leaf.isUnparsed(target[i]) && (target[i] as leaf.Unparsed).value === "-" ) {
                 if (!( i<target.length-1 && leaf.mightBeNumber(target[i+1]) ))
-                    return Expect.error("invalid_-")
+                    // return Expect.error("invalid_-")
+                    // 例えば--1みたいな、二重にオペレータが入ってきた場合、左からパースするこのパーサーはエラーを吐く。エラーをsurpressし、二項演算にその処理を丸投げすることにより解決する。
+                    // 最後のi-=2もこれの一部。
+                    continue
                 if (( 0<i && leaf.mightBeNumber(target[i-1]) ))
                     continue
                 // マイナス化処理
@@ -104,26 +110,20 @@ function parseNot(target: Array<leaf.Prototype>):Expect<void> {
     function callbackfn(target: Array<leaf.Prototype>) {
         // -の処理を流用した。もし統合できそうならしたいなぁ
         for (let i = 0; i < target.length; i++) {
-            // -のパース
-            if ( leaf.isUnparsed(target[i]) && (target[i] as leaf.Unparsed).value === "-" ) {
+            if ( leaf.isUnparsedLogical(target[i]) && (target[i] as leaf.UnparsedLogial).operation === "not" ) {
                 if (!( i<target.length-1 && leaf.mightBeNumber(target[i+1]) ))
-                    return Expect.error("invalid_not")
-                // マイナス化処理
+                    continue
                 target.splice(i,2,
                     new leaf.BitNot(target[i+1]))
                 i-=2
             }
         }
     }
-    return betterThanRecursive(target, callbackfn)
-}
-
-function checkComma(target: Array<leaf.Prototype>):Expect<void> {
-    function callbackfn(target:Array<leaf.Prototype>) {
-        let isObjectExpected = true
-        target.forEach(e => {
-            if (e.type === fun)
-                return Expect.error("comma_expected")
-        })
-    }
+    betterThanRecursive(target, callbackfn)
+    return betterThanRecursive(target,
+        (target: Array<leaf.Prototype>)=>
+            target.some(l=>leaf.isUnparsedLogical(l)&&l.operation==="not")?
+                Expect.error("invalid_not")
+                :Expect.result(undefined)
+    )
 }

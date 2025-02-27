@@ -1,4 +1,4 @@
-export type potType = "string" | "number" | "array" | undefined
+export type potType = "string" | "number" | "array" | "any" | undefined
 
 export class BitNot {
     type: "not" = "not"
@@ -8,6 +8,9 @@ export class BitNot {
     constructor(target: Prototype) {
         this.target = target
     }
+}
+export function isNot(l:Prototype | undefined):l is BitNot {
+    return (l!==undefined && l.type === "not")
 }
 
 const binaryOperators = [
@@ -45,7 +48,7 @@ export function isBinaryOperator(s:string):s is binaryOperator {
 }
 export class binaryOperation {
     type: "binary" = "binary"
-    pottype: potType
+    pottype: potType = "number"
     operation:binaryOperator
     a:Prototype
     b:Prototype
@@ -79,7 +82,7 @@ export function isFunc(l:Prototype | undefined):l is Func {
 
 export class StringLiteral {
     type: "string" = "string"
-    pottype: potType
+    pottype: potType = "string"
     value: string
 
     constructor(value: string) {
@@ -92,7 +95,7 @@ export function isString(l:Prototype):l is StringLiteral {
 
 export class NumberLiteral {
     type: "number" = "number"
-    pottype: potType
+    pottype: potType = "number"
     value: number
 
     constructor(value: number) {
@@ -128,7 +131,7 @@ export function isRoundBracket(l:Prototype | undefined):l is RoundBracket {
 
 export class ArrayLiteral {
     type: "array" = "array"
-    pottype: potType
+    pottype: potType = "array"
     elements: Array<Prototype> = []
 }
 export function isArray(l:Prototype | undefined):l is ArrayLiteral {
@@ -172,12 +175,21 @@ export function isLogicalOperator (s:string):s is logicalOperator {
 }
 
 export function mightBeNumber(l:Prototype) {
+    console.log(`${l} is ${(
+        isBinaryOperation(l) ||
+        isFunc(l) && l.name[l.name.length-1]!=="$" && l.name[l.name.length-1]!=="@" ||
+        isNumber(l) ||
+        isUnparsed(l) && l.value[l.value.length-1]!=="$" && l.value[l.value.length-1]!=="@"||
+        isArrayElement(l) ||
+        isNot(l)
+    )}`)
     return (
         isBinaryOperation(l) ||
         isFunc(l) && l.name[l.name.length-1]!=="$" && l.name[l.name.length-1]!=="@" ||
         isNumber(l) ||
         isUnparsed(l) && l.value[l.value.length-1]!=="$" && l.value[l.value.length-1]!=="@"||
-        isArrayElement(l)
+        isArrayElement(l) ||
+        isNot(l)
     )
 }
 export function mightBeString(l:Prototype) {
