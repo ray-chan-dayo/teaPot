@@ -52,7 +52,7 @@ export function parseBrackets(unparsed: Array<leaf.Prototype>): Expect<Array<lea
                 case ">":
                 case "<":
                 case "=":
-                    if (!relationalOperators.includes(currentLeaf.value))
+                    if (!["=", "<>", ">", "<", ">=", "<="].includes(currentLeaf.value))
                         return Expect.error("invalid_relational")
                     // 落下
                 case ",":
