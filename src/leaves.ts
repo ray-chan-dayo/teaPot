@@ -142,7 +142,7 @@ export class ArrayElement {
     type: "elem" = "elem"
     pottype: potType
     arrayName: string
-    index: Array<Prototype> = []
+    index: Prototype | undefined
     constructor(arrayName:string) {
         this.arrayName = arrayName
     }

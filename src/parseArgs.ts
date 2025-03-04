@@ -51,7 +51,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                     case "<":
                     case "=":
                         if (!relationalOperators.includes(current.value))
-                            return Expect.error("invalid_relational_operator")
+                            return Expect.error("invalid_relational_operator",i)
                         // 落下
                     case "+":
                     case "-":
@@ -70,7 +70,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                         if (leaf.isUnparsed(prev) && !/\W/.test(prev.value) && !isPrevSpace)
                             pending[0].push(new leaf.Unparsed(prev.value + current.value))
                         else
-                            return Expect.error("invalid_$@")
+                            return Expect.error("invalid_$@",i)
                     }break
                     case "(":{
                         let currentParent: Array<leaf.Prototype>
@@ -90,7 +90,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                         }
                         else {
                             // 丸括弧の処理
-                            if (!isObjectExpected) return Expect.error("comma_expected")
+                            if (!isObjectExpected) return Expect.error("comma_expected",i)
                             pending[0].push(new leaf.RoundBracket())
                             currentParent = (pending[0].at(-1) as leaf.RoundBracket).children
                         }
@@ -111,7 +111,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                             pending.unshift([])
                         } else {
                             // 配列の生成
-                            if (!isObjectExpected) return Expect.error("comma_expected")
+                            if (!isObjectExpected) return Expect.error("comma_expected",i)
                             pending[0].push(new leaf.ArrayLiteral())
                             pending.unshift([])
                         }
@@ -121,21 +121,56 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                         // isPotentiallyFunction = false
                     }break
                     case "]":
-                        // isPotentiallyArrayElement = true
-                    case ")":
-                        // isPotentiallyFunction = false
                         // 閉じ括弧の処理
-                        // 階層化されている
-                        if (pending[1]) {
-                            
-                        } else {
-                            parsed.push()
-                        }
+                        if (!pending[1])
+                            // 階層化されていなければerr
+                            return Expect.error("unexpected_)",i)
+                        // at(-1)だとpossibly undefinedされた。
+                        const parent = pending[1][pending[1].length-1]
+                        if (parent.type === "array") {
+                            // 配列
+                        } else if (parent.type = "elem") {
+                            // 配列の要素
+                            const arg = pending.shift()
+                            if (!arg)
+                                return Expect.error("empty_[]",i)
+                            const index = parseObject(arg)
+                            if (!index.success)
+                                // 後で行数指定ちゃんとする
+                                return index
+                            // 動かん時の保険
+                            ;(pending[0][pending[0].length-1] as leaf.ArrayElement).index = index.value
+                        } else
+                            return Expect.error("unexpected_)")
                         break
-
+                    case ")":
+                        // 閉じ括弧の処理
+                        if (!pending[1])
+                            // 階層化されていなければerr
+                            return Expect.error("unexpected_)")
+                        // at(-1)だとpossibly undefinedされた。
+                        if (pending[1][pending[1].length-1].type === "function") {
+                            // 関数
+                            // 最後の引数をパースする
+                            const args = pending.shift()
+                            if (args) {
+                                parseObject(args)
+                            }
+                        } else if (pending[1][pending[1].length-1].type = "round") {
+                            // ただの丸括弧
+                            // 最後の要素をパースする
+                            const args = pending.shift()
+                            if (!args)
+                                return Expect.error("empty_()")
+                            parseObject(args)
+                            const parent = pending[0].at(-1)
+                        } else
+                            // 丸括弧でも関数でもないのに)が入力された
+                            return Expect.error("unexpected_)",i)
+                        break
                     default:
                         console.error(`unexpected Special Letter: ${current.value}`)
-                        return Expect.error("unexpected_letter")
+                        return Expect.error("unexpected_letter",i)
                 }
             if (current.value === ",") {
                 // pendingをpushTargetに移動する処理
@@ -143,6 +178,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
             }
         }
     }
+    // return Expect.result(parsed)
 }
 
 const order: Array<Array<{ operator: leaf.binaryOperator, pottype: Array<leaf.potType> }>> = [
@@ -210,8 +246,8 @@ function parseObject( target: Array<leaf.Prototype> ): Expect<leaf.Prototype> {
     }
 
     if (target[1]) {
-        console.error("no_comma error was returned by parseObject.")
-        return Expect.error("no_comma")
+        console.error("comma_expected error was returned by parseObject.")
+        return Expect.error("comma_expected")
     }
     return Expect.result(target[0])
 }

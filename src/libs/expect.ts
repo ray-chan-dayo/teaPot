@@ -12,7 +12,7 @@ class PotError {
     success: false = false
     message: string
     line : number
-    constructor(errMsg: string, lineNo: number = -1) {
+    constructor(errMsg: string, lineNo: number) {
         this.message = errMsg
         this.line = lineNo
     }    
@@ -20,7 +20,7 @@ class PotError {
 
 const Expect = {
     result: <T>(value: T) => new Success<T>(value),
-    error: (errMsg: string) => new PotError(errMsg),
+    error: (errMsg: string, lineNo: number = -1) => new PotError(errMsg, lineNo),
     isError: (e:Expect<any>):e is PotError => !e.success
 }
 
