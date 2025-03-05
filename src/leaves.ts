@@ -120,6 +120,21 @@ export function isUnparsed(l:Prototype | undefined):l is Unparsed {
     return l !== undefined && l.type === "unparsed";
 }
 
+export class Variable {
+    type: "variable" = "variable"
+    pottype: potType
+    name: string
+
+    constructor(name: string, pottype: potType) {
+        this.name = name,
+        this.pottype = pottype
+    }
+}
+
+export function isVariable(l:Prototype | undefined):l is Variable {
+    return l !== undefined && l.type === "variable";
+}
+
 export class RoundBracket {
     type: "round" = "round"
     pottype: potType
@@ -140,11 +155,11 @@ export function isArray(l:Prototype | undefined):l is ArrayLiteral {
 
 export class ArrayElement {
     type: "elem" = "elem"
-    pottype: potType
-    arrayName: string
+    pottype: potType = "any"
+    array: Prototype
     index: Prototype | undefined
-    constructor(arrayName:string) {
-        this.arrayName = arrayName
+    constructor(array:Prototype) {
+        this.array = array
     }
 }
 export function isArrayElement(l:Prototype | undefined):l is ArrayElement {
@@ -161,7 +176,7 @@ export class Origin {
 export type logicalOperator = "not" | "and" | "or"
 export class UnparsedLogial {
     type: "unparsedlogic" = "unparsedlogic"
-    pottype: potType
+    pottype: potType = "number"
     operation: logicalOperator
     constructor(operation: logicalOperator) {
         this.operation = operation as logicalOperator
@@ -175,14 +190,16 @@ export function isLogicalOperator (s:string):s is logicalOperator {
 }
 
 export function mightBeNumber(l:Prototype) {
-    console.log(`${l} is ${(
-        isBinaryOperation(l) ||
-        isFunc(l) && l.name[l.name.length-1]!=="$" && l.name[l.name.length-1]!=="@" ||
-        isNumber(l) ||
-        isUnparsed(l) && l.value[l.value.length-1]!=="$" && l.value[l.value.length-1]!=="@"||
-        isArrayElement(l) ||
-        isNot(l)
-    )}`)
+    // console.log(`${l} is ${(
+    //     isBinaryOperation(l) ||
+    //     isFunc(l) && l.name[l.name.length-1]!=="$" && l.name[l.name.length-1]!=="@" ||
+    //     isNumber(l) ||
+    //     isUnparsed(l) && l.value[l.value.length-1]!=="$" && l.value[l.value.length-1]!=="@"||
+    //     isArrayElement(l) ||
+    //     isNot(l)
+    // )}`)
+
+    // 下に同じく
     return (
         isBinaryOperation(l) ||
         isFunc(l) && l.name[l.name.length-1]!=="$" && l.name[l.name.length-1]!=="@" ||
@@ -194,9 +211,20 @@ export function mightBeNumber(l:Prototype) {
 }
 export function mightBeString(l:Prototype) {
     return(
+        // 下に同じく
         isBinaryOperation(l) && l.operation === "+" ||
         isFunc(l) && l.name[l.name.length-1]==="$" ||
         isUnparsed(l) && l.value[l.value.length-1]==="$" ||
+        isArrayElement(l)
+    )
+}
+export function mightBeArray(l:Prototype) {
+    return(
+        // この中途半端なパースにかんしてはどげんかしたい
+        isRoundBracket(l) ||
+        isBinaryOperation(l) && l.operation === "+" ||
+        isFunc(l) && l.name[l.name.length-1]==="@" ||
+        isUnparsed(l) && l.value[l.value.length-1]==="@" ||
         isArrayElement(l)
     )
 }
@@ -208,6 +236,7 @@ export type Prototype = // Coordinate
 | StringLiteral
 | NumberLiteral
 | Unparsed
+| Variable
 | RoundBracket
 | ArrayLiteral
 | ArrayElement
