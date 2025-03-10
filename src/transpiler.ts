@@ -1,7 +1,7 @@
 import { splitFirst } from "./libs/miscs"
-import { parseObject } from "./parseObject"
+import { parseExpression } from "./parseExpression"
 
-export function jasmineTranspiler(text: string): string {
+export function jasmineTranspiler(text: string): void {
 
     const lines = text.split("\n")
     const vars = []
@@ -17,8 +17,7 @@ export function jasmineTranspiler(text: string): string {
         const args = section[1]
         switch (section[0]) {
             case "let":{
-                const args = splitFirst(section[1], "=")
-                
+                const args = /(\w+[$@]?) *= *(.*)/
             }break
             case "input":{
 

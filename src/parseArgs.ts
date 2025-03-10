@@ -1,9 +1,9 @@
 import * as leaf from "./leaves"
 import { Expect } from "./libs/expect"
 import { relationalOperators } from "./libs/miscs"
-import { parseObject } from "./parseObject"
+import { parseExpression } from "./parseExpression"
 
-export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): Expect<Array<leaf.Prototype>> {
+export function parseArgs( input: string, typeArray: Array<leaf.potType> ): Expect<Array<leaf.Prototype>> {
 
     const ripped = input.split('"')
     if (ripped.length % 2 !== 1)
@@ -24,14 +24,14 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
 
     const pending: Array<Array<leaf.Prototype>> = [[]]
     let isPrevSpace = true
-    // エラー表示をしやすくするためにisObjectExpectedを作る。
-    let isObjectExpected = true
+    // エラー表示をしやすくするためにisExpressionExpectedを作る。
+    let isExpressionExpected = true
     for (let i = 0; i < unparsed.length; i++) {
         const current = unparsed[i]
         if (leaf.isString(current)) {
-            if (!isObjectExpected) return Expect.error("expected_comma")
+            if (!isExpressionExpected) return Expect.error("expected_comma")
             pending[0].push(current)
-            isObjectExpected = false
+            isExpressionExpected = false
             continue
         }
         if (leaf.isUnparsed(current)) {
@@ -42,8 +42,8 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
             if (/\w/.test(current.value)) {
                 // 半角英数の処理
                 if (/\d/.test(current.value[0])) {
-                    if (!isObjectExpected) return Expect.error("expected_comma",i)
-                    isObjectExpected = false
+                    if (!isExpressionExpected) return Expect.error("expected_comma",i)
+                    isExpressionExpected = false
                     if (/^\d+\.?\d*$/.test(current.value)) {
                         // 01とかがパースできてしまうので殺す
                         if ( current.value !== "0" && current.value[0] === "0" && current.value[1] !=="." )
@@ -53,11 +53,11 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                         return Expect.error("inparsable_number",i)
                 } else if (leaf.isLogicalOperator(current.value)) {
                     pending[0].push(new leaf.UnparsedLogial(current.value))
-                    isObjectExpected = true
+                    isExpressionExpected = true
                 }
                 else {
-                    if (!isObjectExpected) return Expect.error("expected_comma",i)
-                    isObjectExpected = false
+                    if (!isExpressionExpected) return Expect.error("expected_comma",i)
+                    isExpressionExpected = false
                     pending[0].push(current)
                 }
             }
@@ -73,10 +73,10 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                     case "*":
                     case "/":
                     case "%":
-                        if (isObjectExpected) return Expect.error("expected_object",i)
+                        if (isExpressionExpected) return Expect.error("expected_object",i)
                     case "-":
                         pending[0].push(current)
-                        isObjectExpected = true
+                        isExpressionExpected = true
                         break
                     case "@":
                     case "$":{
@@ -97,11 +97,11 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                         }
                         else {
                             // 丸括弧の処理
-                            if (!isObjectExpected) return Expect.error("expected_comma",i)
+                            if (!isExpressionExpected) return Expect.error("expected_comma",i)
                             pending[0].push(new leaf.RoundBracket())
                             pending.unshift([])
                         }
-                        isObjectExpected = true
+                        isExpressionExpected = true
                     }break
 
                     case "[":{
@@ -109,8 +109,8 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                         if ( !isPrevSpace && leaf.mightBeArray(prev) )
                         {
                             pending[0].pop()
-                            if (isObjectExpected) {
-                                console.error(`isObjectExpected is true dispite ArrayElement was about to construct. prev:${JSON.stringify(prev)}`)
+                            if (isExpressionExpected) {
+                                console.error(`isExpressionExpected is true dispite ArrayElement was about to construct. prev:${JSON.stringify(prev)}`)
                                 return Expect.error("internal_error")
                             }
                             if (leaf.isUnparsed(prev))
@@ -120,7 +120,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                             pending.unshift([])
                         } else {
                             // 配列の生成
-                            if (!isObjectExpected)
+                            if (!isExpressionExpected)
                                 // 理論上正しいが、直観的にするために追加。
                                 if (isPrevSpace)
                                     return Expect.error("expected_comma",i)
@@ -130,7 +130,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                             pending.unshift([])
                         }
 
-                        isObjectExpected = true
+                        isExpressionExpected = true
                     }break
                     case "]":{
                         // 閉じ括弧の処理
@@ -143,7 +143,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                         if (leaf.isArray(parent)) {
                             // 配列
                             if (children) {
-                                const elem = parseObject(children)
+                                const elem = parseExpression(children)
                                 if (!elem.success)
                                     return elem // TODO: 後で行数指定ちゃんとする
                                 parent.elements.push(elem.value)
@@ -153,14 +153,14 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                             // 配列の要素
                             if (!children)
                                 return Expect.error("empty_index",i)
-                            const index = parseObject(children)
+                            const index = parseExpression(children)
                             if (!index.success)
                                 return index // TODO: 後で行数指定ちゃんとする
                             parent.index = index.value
                             // ;(pending[0][pending[0].length-1] as leaf.ArrayElement).index = index.value // 動かん時の保険
                         } else
                             return Expect.error("unexpected_]",i)
-                        isObjectExpected = false
+                        isExpressionExpected = false
                     }break
                     case ")":{
                         // 閉じ括弧の処理
@@ -175,7 +175,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                             // 関数
                             // 最後の引数をパースする
                             if (args) {
-                                const elem = parseObject(args)
+                                const elem = parseExpression(args)
                                 if (!elem.success)
                                     return elem // TODO: 後で行数指定ちゃんとする
                                 parent.args.push(elem.value)
@@ -187,14 +187,14 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                             // 最後の要素をパースする
                             if (!args)
                                 return Expect.error("unexpected_)",i)
-                            const elem = parseObject(args)
+                            const elem = parseExpression(args)
                             if (!elem.success)
                                 return elem // TODO: 後で行数指定ちゃんとする
                             parent.children.push(elem.value)
                         } else
                             // 丸括弧でも関数でもないのに)が入力された
                             return Expect.error("unexpected_)",i)
-                        isObjectExpected = false
+                        isExpressionExpected = false
                     }break
                     default:
                         console.error(`unexpected Special Letter: ${current.value}`)
@@ -205,7 +205,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                 // 2項演算子の処理
                 if (pending[1]) {
                     const parent = pending[1][pending[1].length-1]
-                    const child = parseObject(pending[0])
+                    const child = parseExpression(pending[0])
                     if (!child.success)
                         return child
                     if (leaf.isFunc(parent))
@@ -218,7 +218,7 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
                         return Expect.error("comma_in_index")
                     pending[0] = []
                 }
-                const res = parseObject(pending[0])
+                const res = parseExpression(pending[0])
                 if (!res.success)
                     return res
                 parsed.push(res.value)
@@ -226,11 +226,17 @@ export function parseArgs( input: string, /*typeArray: Array<leaf.potType>*/ ): 
             }
         }
     }
-    const res = parseObject(pending[0])
+    const res = parseExpression(pending[0])
     if (!res.success)
         return res
     parsed.push(res.value)
     pending[0] = []
     
+    // typetester
+    for (let i = 0; i < array.length; i++) {
+        const element = array[i];
+        
+    }
+
     return Expect.result(parsed)
 }

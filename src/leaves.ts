@@ -13,7 +13,7 @@ export function isNot(l:Prototype | undefined):l is BitNot {
     return (l!==undefined && l.type === "not")
 }
 
-const binaryOperators = [
+const binaryOperators: Array<string> = [
     "*",
     "/",
     "%",

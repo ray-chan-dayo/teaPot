@@ -25,9 +25,9 @@ const order: Array<Array<{ operator: leaf.binaryOperator, pottype: Array<leaf.po
         { operator: "xor", pottype: ["any","number"] }
     ]
 
-]
+] as const
 
-export function parseObject( target: Array<leaf.Prototype> ): Expect<leaf.Prototype> {
+export function parseExpression( target: Array<leaf.Prototype> ): Expect<leaf.Prototype> {
     for (let i = 0; i < target.length; i++) {
         const current = target[i]
         if ( leaf.isUnparsed(current) && /\w/.test(current.value[0]) )
@@ -74,9 +74,12 @@ export function parseObject( target: Array<leaf.Prototype> ): Expect<leaf.Protot
             for (let i = 0; i < target.length; i++) {
                 const currentLeaf = target[i];
                 if ( leaf.isUnparsedLogical(currentLeaf) && currentLeaf.operation === "not") {
-                    if ( i<target.length-1 && target[i+1].pottype !== "number" && target[i+1].pottype !== "any" )
-                        return Expect.error("invalid_not")
+
+                    if ( i<target.length-1 )
+                        return Expect.error("invalid_not_placement")
                     const nxt = target[i+1]
+                    if ( nxt.pottype !== "number" && nxt.pottype !== "any" && !( leaf.isUnparsedLogical(nxt) && nxt.operation === "not" ) )
+                        return Expect.error("invalid_not")
                     if ( leaf.isNumber(nxt) )
                         target.splice(i-1,3, new leaf.NumberLiteral(
                             // ~はnot
@@ -84,6 +87,7 @@ export function parseObject( target: Array<leaf.Prototype> ): Expect<leaf.Protot
                         ))
                     else
                         target.splice(i-1,3, new leaf.BitNot(nxt) )
+                    i--
                 }
             }
         
@@ -118,9 +122,10 @@ export function parseObject( target: Array<leaf.Prototype> ): Expect<leaf.Protot
     }
 
     if (target[1]) {
-        console.error("expected_comma error was returned by parseObject.")
+        console.error("expected_comma error was returned by parseExpression.")
         console.error(target)
         return Expect.error("expected_comma")
     }
+    
     return Expect.result(target[0])
 }
