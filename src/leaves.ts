@@ -49,19 +49,19 @@ export function isBinaryOperator(s:string):s is binaryOperator {
 export class binaryOperation {
     type: "binary" = "binary"
     pottype: potType
-    operation:binaryOperator
-    a:Prototype
-    b:Prototype
+    operation: binaryOperator
+    left: Prototype
+    right: Prototype
 
     constructor(operation:binaryOperator,
-        a:Prototype,
-        b:Prototype,
+        l: Prototype,
+        r: Prototype,
         pottype: potType = "any"
     ) {
         this.operation = operation
         this.pottype = pottype
-        this.a = a
-        this.b = b
+        this.left = l
+        this.right = r
     }
 }
 export function isBinaryOperation(l:Prototype | undefined):l is binaryOperation {

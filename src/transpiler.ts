@@ -1,3 +1,4 @@
+import { executeExpression } from "./executeExpression"
 import * as leaf from "./leaves"
 import { Expect } from "./libs/expect"
 import { splitFirst } from "./libs/miscs"
@@ -9,7 +10,7 @@ export function jasmineTranspiler(text: string): any {
     const br = /\r\n|\n|\r/g
 
     const lines = text.split(br)
-    const vars = []
+    const vars = {}
     const data = []
     const pics = []
     const backgrounds = []
@@ -27,8 +28,15 @@ export function jasmineTranspiler(text: string): any {
                     return showError(exp, i)
                 if ( exp.value.length !== 1 )
                     return showError(Expect.error("invalid_let"), i) 
-                const declearing = exp.value
-                if (leaf.isBinaryOperation(declearing))
+                const declearing = exp.value[0]
+                if (leaf.isBinaryOperation(declearing) && declearing.operation === "=") {
+                    const variable = declearing.left
+                    if (leaf.isVariable(variable)) {
+                        vars[variable.name] = executeExpression(declearing.right)
+                    } else {
+                        return showError(Expect.error("invalid_let"), i)
+                    }
+                }
             }break
             case "input":{
                 
