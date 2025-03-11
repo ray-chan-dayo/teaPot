@@ -246,5 +246,3 @@ export type Prototype = // Coordinate
 | Origin
 | UnparsedLogial
 | BitNot
-
-export type types = Prototype["type"]
