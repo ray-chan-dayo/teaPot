@@ -11,10 +11,10 @@ class Success<T> {
 class PotError {
     success: false = false
     message: string
-    line : number
-    constructor(errMsg: string, lineNo: number) {
+    index : number
+    constructor(errMsg: string, index: number) {
         this.message = errMsg
-        this.line = lineNo
+        this.index = index
     }    
 }
 

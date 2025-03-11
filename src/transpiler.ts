@@ -1,9 +1,14 @@
+import * as leaf from "./leaves"
+import { Expect } from "./libs/expect"
 import { splitFirst } from "./libs/miscs"
+import { parseArgs } from "./parseArgs"
 import { parseExpression } from "./parseExpression"
+import { showError } from "./showError"
 
-export function jasmineTranspiler(text: string): void {
+export function jasmineTranspiler(text: string): any {
+    const br = /\r\n|\n|\r/g
 
-    const lines = text.split("\n")
+    const lines = text.split(br)
     const vars = []
     const data = []
     const pics = []
@@ -11,20 +16,24 @@ export function jasmineTranspiler(text: string): void {
 
     // データの処理
 
+    // 実行
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trimStart()
         const section = splitFirst(line, " ")
-        const args = section[1]
         switch (section[0]) {
             case "let":{
-                const args = /(\w+[$@]?) *= *(.*)/
+                const exp = parseArgs(section[1])
+                if (!exp.success)
+                    return showError(exp, i)
+                if ( exp.value.length !== 1 )
+                    return showError(Expect.error("invalid_let"), i) 
+                const declearing = exp.value
+                if (leaf.isBinaryOperation(declearing))
             }break
             case "input":{
-
+                
             }break
-            case "data":{
-
-            }break
+            case "data":break
             case "read":{
 
             }break
@@ -166,8 +175,9 @@ export function jasmineTranspiler(text: string): void {
             case "speak":{
 
             }break
-            default:
-                break
+            default:{
+
+            }break
 
         }
     }

@@ -62,7 +62,7 @@ export function parseExpression( target: Array<leaf.Prototype> ): Expect<leaf.Pr
                 )
             else
                 target.splice(i,2,
-                    new leaf.binaryOperation("*", new leaf.NumberLiteral(-1), target[i+1])
+                    new leaf.binaryOperation("*", new leaf.NumberLiteral(-1), target[i+1], "number")
                 )
             i-=2
         }
@@ -104,17 +104,18 @@ export function parseExpression( target: Array<leaf.Prototype> ): Expect<leaf.Pr
                 const prev = target[i-1]
                 const nxt = target[i+1]
                 // 型の一致を取れないなら殺す
-                if ( !(( prev.pottype === nxt.pottype || prev.pottype === "any" || nxt.pottype === "any" ) &&
-                    operators[opeidx].pottype.includes(prev.pottype) && operators[opeidx].pottype.includes(nxt.pottype)))
-                    // debug
-                    {
-                        console.log("TYPE_ERROR");console.log(prev);console.log(nxt)
-                    return Expect.error("type_error")
-                    // debug
-                    }
-                target.splice(i-1,3,
-                    new leaf.binaryOperation(operators[opeidx].operator, prev, nxt)
-                )
+                if ( !(operators[opeidx].pottype.includes(prev.pottype) && operators[opeidx].pottype.includes(nxt.pottype)) )
+                    return Expect.error("type_error", i)
+                if ( prev.pottype === nxt.pottype || nxt.pottype === "any" )
+                    target.splice(i-1,3,
+                        new leaf.binaryOperation(operators[opeidx].operator, prev, nxt, prev.pottype)
+                    )
+                else if ( prev.pottype === "any")
+                    target.splice(i-1,3,
+                        new leaf.binaryOperation(operators[opeidx].operator, prev, nxt, prev.pottype)
+                    )
+                else
+                    return Expect.error("type_error", i)
                 i--
                 continue
             }

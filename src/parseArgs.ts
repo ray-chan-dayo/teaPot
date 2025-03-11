@@ -3,7 +3,7 @@ import { Expect } from "./libs/expect"
 import { relationalOperators } from "./libs/miscs"
 import { parseExpression } from "./parseExpression"
 
-export function parseArgs( input: string, typeArray: Array<leaf.potType> ): Expect<Array<leaf.Prototype>> {
+export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
 
     const ripped = input.split('"')
     if (ripped.length % 2 !== 1)
@@ -92,7 +92,12 @@ export function parseArgs( input: string, typeArray: Array<leaf.potType> ): Expe
                             // function化の処理
                             pending[0].pop()
                             const funcName = prev.value
-                            pending[0].push(new leaf.Func(funcName))
+                            if (prev.value.at(-1)==="@")
+                                pending[0].push(new leaf.Func(funcName, "array"))
+                            else if (prev.value.at(-1)==="$")
+                                pending[0].push(new leaf.Func(funcName, "string"))
+                            else
+                                pending[0].push(new leaf.Func(funcName, "number"))
                             pending.unshift([])
                         }
                         else {
@@ -231,12 +236,6 @@ export function parseArgs( input: string, typeArray: Array<leaf.potType> ): Expe
         return res
     parsed.push(res.value)
     pending[0] = []
-    
-    // typetester
-    for (let i = 0; i < array.length; i++) {
-        const element = array[i];
-        
-    }
 
     return Expect.result(parsed)
 }

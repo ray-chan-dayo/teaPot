@@ -48,16 +48,18 @@ export function isBinaryOperator(s:string):s is binaryOperator {
 }
 export class binaryOperation {
     type: "binary" = "binary"
-    pottype: potType = "number"
+    pottype: potType
     operation:binaryOperator
     a:Prototype
     b:Prototype
 
     constructor(operation:binaryOperator,
         a:Prototype,
-        b:Prototype
+        b:Prototype,
+        pottype: potType = "any"
     ) {
         this.operation = operation
+        this.pottype = pottype
         this.a = a
         this.b = b
     }
@@ -72,8 +74,9 @@ export class Func {
     name: string
     args: Array<Prototype> = []
 
-    constructor(name: string ) {
+    constructor(name: string, pottype: potType) {
         this.name = name
+        this.pottype = pottype
     }
 }
 export function isFunc(l:Prototype | undefined):l is Func {
@@ -243,3 +246,5 @@ export type Prototype = // Coordinate
 | Origin
 | UnparsedLogial
 | BitNot
+
+export type types = Prototype["type"]
