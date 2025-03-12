@@ -6,33 +6,36 @@ import { parseArgs } from "./parseArgs"
 import { parseExpression } from "./parseExpression"
 import { showError } from "./showError"
 import { vars } from "./libs/shared"
-import { substitute } from "./substitute"
+import { parseSubstitution } from "./substitute"
+import { jasmineDataPicker } from "./dataPicker"
 
 export function jasmineInterPreter(text: string): any {
     const br = /\r\n|\n|\r/g
 
     const lines = text.split(br)
-    const data = []
-    const pics = []
-    const backgrounds = []
-
     // データの処理
-
+    const data = jasmineDataPicker(text)
     // 実行
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trimStart()
         const section = splitFirst(line, " ")
         switch (section[0]) {
             case "let":{
-                console.log("letting")
-                console.log(substitute(section[1]))
+                const result = parseSubstitution(section[1])
+                if (!result.success) showError(result, i)
+                // 時間ないのとコードの一貫性を保つために
+                // result.success || showError(result, i)
             }break
             case "input":{
                 
             }break
             case "data":break
             case "read":{
-
+                const args = parseArgs(section[1])
+                if (!args.success) return showError(args, i)
+                args.value
+                if (!leaf.isVariable(variable)) showError(Expect.error("invalid_read"), i)
+                vars[variable.name] = data.pop()
             }break
             case "if":{
 

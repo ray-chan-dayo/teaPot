@@ -226,8 +226,8 @@ export function mightBeNumber(l:Prototype) {
         isRoundBracket(l) ||
         isBinaryOperation(l) ||
         isFunc(l) && l.name[l.name.length-1]!=="$" && l.name[l.name.length-1]!=="@" ||
-        isNumber(l) ||
         isUnparsed(l) && l.value[l.value.length-1]!=="$" && l.value[l.value.length-1]!=="@"||
+        isNumber(l) ||
         isArrayElement(l) ||
         isNot(l)
     )
@@ -239,6 +239,7 @@ export function mightBeString(l:Prototype) {
         isBinaryOperation(l) && l.operation === "+" ||
         isFunc(l) && l.name[l.name.length-1]==="$" ||
         isUnparsed(l) && l.value[l.value.length-1]==="$" ||
+        isString(l) ||
         isArrayElement(l)
     )
 }
@@ -249,6 +250,7 @@ export function mightBeArray(l:Prototype) {
         isBinaryOperation(l) && l.operation === "+" ||
         isFunc(l) && l.name[l.name.length-1]==="@" ||
         isUnparsed(l) && l.value[l.value.length-1]==="@" ||
+        isArrayLiteral(l) ||
         isArrayElement(l)
     )
 }

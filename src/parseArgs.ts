@@ -160,7 +160,7 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                             const index = parseExpression(children)
                             if (!index.success)
                                 return index // TODO: 後で行数指定ちゃんとする
-                            pending[1][pending[1].length-1] = new leaf.ArrayElement(parent, index.value)
+                            pending[0][pending[0].length-1] = new leaf.ArrayElement(parent, index.value)
                         } else
                             return Expect.error("unexpected_]",i)
                         isExpressionExpected = false

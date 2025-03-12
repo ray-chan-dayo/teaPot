@@ -1,5 +1,6 @@
 import { isDecimalNumber, splitFirst } from "./libs/miscs";
 
+// dataは逆順なので注意
 export function jasmineDataPicker(text: string) {
     const br = /\r\n|\n|\r/g
     const data:Array<Number|string> = []
@@ -12,9 +13,9 @@ export function jasmineDataPicker(text: string) {
                     .forEach(dataPile=>{
                         dataPile = dataPile.trimStart()
                         if (isDecimalNumber(dataPile)){
-                            data.push(parseFloat(dataPile))
+                            data.unshift(parseFloat(dataPile))
                         } else {
-                            data.push(dataPile)
+                            data.unshift(dataPile)
                         }
                     })
         })
