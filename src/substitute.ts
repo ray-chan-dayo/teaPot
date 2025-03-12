@@ -3,7 +3,6 @@ import * as leaf from "./leaves"
 import { Expect } from "./libs/expect"
 import { executeExpression } from "./executeExpression"
 import { vars } from "./libs/shared"
-import { parseExpression } from "./parseExpression"
 
 export function parseSubstitution(expression: string): Expect<undefined> {
     const exp = parseArgs(expression)
