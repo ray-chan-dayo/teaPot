@@ -1,9 +1,13 @@
 export type potType = "string" | "number" | "array" | "any" | undefined
 
+export type potValue<T extends potAny = potAny> = T | undefined
+type potAny = number | string | Array<potValue>
+
 export class BitNot {
     type: "not" = "not"
     pottype: potType = "number"
     target: Prototype
+    value: potValue<number>
 
     constructor(target: Prototype) {
         this.target = target
@@ -52,6 +56,7 @@ export class binaryOperation {
     operation: binaryOperator
     left: Prototype
     right: Prototype
+    value: potValue
 
     constructor(operation:binaryOperator,
         l: Prototype,
@@ -73,6 +78,7 @@ export class Func {
     pottype: potType
     name: string
     args: Array<Prototype> = []
+    value: potValue
 
     constructor(name: string, pottype: potType) {
         this.name = name
@@ -127,6 +133,7 @@ export class Variable {
     type: "variable" = "variable"
     pottype: potType
     name: string
+    value: potValue
 
     constructor(name: string, pottype: potType) {
         this.name = name,
@@ -142,6 +149,7 @@ export class RoundBracket {
     type: "round" = "round"
     pottype: potType
     children: Array<Prototype> = []
+    value: potValue
 }
 export function isRoundBracket(l:Prototype | undefined):l is RoundBracket {
     return l !== undefined && l.type === "round";
@@ -151,38 +159,49 @@ export class ArrayLiteral {
     type: "array" = "array"
     pottype: potType = "array"
     elements: Array<Prototype> = []
+    value: potValue
 }
 export function isArray(l:Prototype | undefined):l is ArrayLiteral {
     return l !== undefined && l.type === "array";
+}
+
+export class UnparsedArrayElement {
+    type: "unparsedelem" = "unparsedelem"
+    pottype: potType = "any"
+    array: Prototype
+    value: undefined
+    constructor(array:Prototype) {      
+        this.array = array
+    }
+}
+
+export function isUnparsedArrayElement(l:Prototype | undefined):l is UnparsedArrayElement {
+    return l !== undefined && l.type === "unparsedelem";
 }
 
 export class ArrayElement {
     type: "elem" = "elem"
     pottype: potType = "any"
     array: Prototype
-    index: Prototype | undefined
-    constructor(array:Prototype) {
-        this.array = array
+    index: Prototype
+    value: potValue
+    constructor(array:UnparsedArrayElement, index:Prototype) {
+        this.array = array.array
+        this.index = index
     }
 }
+
 export function isArrayElement(l:Prototype | undefined):l is ArrayElement {
     return l !== undefined && l.type === "elem";
-}
-
-
-export class Origin {
-    type: "origin" = "origin"
-    pottype: potType
-    children: Array<Prototype> = []
 }
 
 export type logicalOperator = "not" | "and" | "or"
 export class UnparsedLogial {
     type: "unparsedlogic" = "unparsedlogic"
     pottype: potType = "number"
-    operation: logicalOperator
-    constructor(operation: logicalOperator) {
-        this.operation = operation as logicalOperator
+    value: logicalOperator
+    constructor(value: logicalOperator) {
+        this.value = value
     }
 }
 export function isUnparsedLogical(l:Prototype | undefined):l is UnparsedLogial {
@@ -204,6 +223,7 @@ export function mightBeNumber(l:Prototype) {
 
     // 下に同じく
     return (
+        isRoundBracket(l) ||
         isBinaryOperation(l) ||
         isFunc(l) && l.name[l.name.length-1]!=="$" && l.name[l.name.length-1]!=="@" ||
         isNumber(l) ||
@@ -215,6 +235,7 @@ export function mightBeNumber(l:Prototype) {
 export function mightBeString(l:Prototype) {
     return(
         // 下に同じく
+        isRoundBracket(l) ||
         isBinaryOperation(l) && l.operation === "+" ||
         isFunc(l) && l.name[l.name.length-1]==="$" ||
         isUnparsed(l) && l.value[l.value.length-1]==="$" ||
@@ -242,7 +263,7 @@ export type Prototype = // Coordinate
 | Variable
 | RoundBracket
 | ArrayLiteral
+| UnparsedArrayElement
 | ArrayElement
-| Origin
 | UnparsedLogial
 | BitNot

@@ -119,9 +119,9 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                                 return Expect.error("internal_error")
                             }
                             if (leaf.isUnparsed(prev))
-                                pending[0].push(new leaf.ArrayElement(new leaf.Variable(prev.value, "array")))
+                                pending[0].push(new leaf.UnparsedArrayElement(new leaf.Variable(prev.value, "array")))
                             else
-                                pending[0].push(new leaf.ArrayElement(prev))
+                                pending[0].push(new leaf.UnparsedArrayElement(prev))
                             pending.unshift([])
                         } else {
                             // 配列の生成
@@ -152,17 +152,15 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                                 if (!elem.success)
                                     return elem // TODO: 後で行数指定ちゃんとする
                                 parent.elements.push(elem.value)
-                                // ;(pending[0][pending[0].length-1] as leaf.ArrayElement).elements.push(elem.value) // 動かん時の保険
                             }
-                        } else if (leaf.isArrayElement(parent)) {
+                        } else if (leaf.isUnparsedArrayElement(parent)) {
                             // 配列の要素
                             if (!children)
                                 return Expect.error("empty_index",i)
                             const index = parseExpression(children)
                             if (!index.success)
                                 return index // TODO: 後で行数指定ちゃんとする
-                            parent.index = index.value
-                            // ;(pending[0][pending[0].length-1] as leaf.ArrayElement).index = index.value // 動かん時の保険
+                            pending[1][pending[1].length-1] = new leaf.ArrayElement(parent, index.value)
                         } else
                             return Expect.error("unexpected_]",i)
                         isExpressionExpected = false
@@ -215,12 +213,16 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                         return child
                     if (leaf.isFunc(parent))
                         parent.args.push(child.value)
-                    if (leaf.isRoundBracket(parent))
+                    else if (leaf.isRoundBracket(parent))
                         parent.children.push(child.value)
-                    if (leaf.isArray(parent))
+                    else if (leaf.isArray(parent))
                         parent.elements.push(child.value)
-                    if (leaf.isArrayElement(parent))
+                    else if (leaf.isUnparsedArrayElement(parent))
                         return Expect.error("comma_in_index")
+                    else {
+                        console.error(`unexpected parent: ${parent}`)
+                        return Expect.error("internal_error")
+                    }
                     pending[0] = []
                 }
                 const res = parseExpression(pending[0])

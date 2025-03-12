@@ -73,12 +73,12 @@ export function parseExpression( target: Array<leaf.Prototype> ): Expect<leaf.Pr
         if (!operators[0] /* NOT */)
             for (let i = 0; i < target.length; i++) {
                 const currentLeaf = target[i];
-                if ( leaf.isUnparsedLogical(currentLeaf) && currentLeaf.operation === "not") {
+                if ( leaf.isUnparsedLogical(currentLeaf) && currentLeaf.value === "not") {
 
                     if ( i<target.length-1 )
                         return Expect.error("invalid_not_placement")
                     const nxt = target[i+1]
-                    if ( nxt.pottype !== "number" && nxt.pottype !== "any" && !( leaf.isUnparsedLogical(nxt) && nxt.operation === "not" ) )
+                    if ( nxt.pottype !== "number" && nxt.pottype !== "any" && !( leaf.isUnparsedLogical(nxt) && nxt.value === "not" ) )
                         return Expect.error("invalid_not")
                     if ( leaf.isNumber(nxt) )
                         target.splice(i-1,3, new leaf.NumberLiteral(
@@ -94,10 +94,8 @@ export function parseExpression( target: Array<leaf.Prototype> ): Expect<leaf.Pr
         for (let i = 0; i < target.length; i++) {
             const currentLeaf = target[i]
             let opeidx = -1
-            if ( (leaf.isUnparsed(currentLeaf)) && leaf.isBinaryOperator(currentLeaf.value) )
+            if ( (leaf.isUnparsed(currentLeaf) || leaf.isUnparsedLogical(currentLeaf)) && leaf.isBinaryOperator(currentLeaf.value) )
                 opeidx = operators.findIndex(e=>e.operator === currentLeaf.value)
-            if ( (leaf.isUnparsedLogical(currentLeaf)) && leaf.isBinaryOperator(currentLeaf.operation) )
-                opeidx = operators.findIndex(e=>e.operator === currentLeaf.operation)
             if (opeidx !== -1) {
                 if ( !( 0<i && i<target.length-1 ) )
                     return Expect.error("invalid_operator_placement")
