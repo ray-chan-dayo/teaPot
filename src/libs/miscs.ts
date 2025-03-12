@@ -20,3 +20,5 @@ export const relationalOperators = [
     ">=",
     "<=",
 ]
+
+export const br = /\r\n|\n|\r/g

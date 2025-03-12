@@ -161,7 +161,7 @@ export class ArrayLiteral {
     elements: Array<Prototype> = []
     value: potValue
 }
-export function isArray(l:Prototype | undefined):l is ArrayLiteral {
+export function isArrayLiteral(l:Prototype | undefined):l is ArrayLiteral {
     return l !== undefined && l.type === "array";
 }
 

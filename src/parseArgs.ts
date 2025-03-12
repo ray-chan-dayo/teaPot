@@ -145,7 +145,7 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                         // at(-1)だとpossibly undefinedされた。
                         const parent = pending[1][pending[1].length-1]
                         const children = pending.shift()
-                        if (leaf.isArray(parent)) {
+                        if (leaf.isArrayLiteral(parent)) {
                             // 配列
                             if (children) {
                                 const elem = parseExpression(children)
@@ -215,7 +215,7 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                         parent.args.push(child.value)
                     else if (leaf.isRoundBracket(parent))
                         parent.children.push(child.value)
-                    else if (leaf.isArray(parent))
+                    else if (leaf.isArrayLiteral(parent))
                         parent.elements.push(child.value)
                     else if (leaf.isUnparsedArrayElement(parent))
                         return Expect.error("comma_in_index")
