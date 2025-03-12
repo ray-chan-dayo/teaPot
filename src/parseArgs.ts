@@ -126,7 +126,7 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                         } else {
                             // 配列の生成
                             if (!isExpressionExpected)
-                                // 理論上正しいが、直観的にするために追加。
+                                // 細かくエラーを返してあげるの
                                 if (isPrevSpace)
                                     return Expect.error("expected_comma",i)
                                 else
@@ -206,6 +206,8 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
             if (current.value === ",") {
                 // pendingをpushTargetに移動する処理
                 // 2項演算子の処理
+                if (isExpressionExpected) return Expect.error("expected_object",i)
+                isExpressionExpected = true
                 if (pending[1]) {
                     const parent = pending[1][pending[1].length-1]
                     const child = parseExpression(pending[0])
@@ -225,11 +227,13 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                     }
                     pending[0] = []
                 }
-                const res = parseExpression(pending[0])
-                if (!res.success)
-                    return res
-                parsed.push(res.value)
-                pending[0] = []
+                if (pending[0].length > 0) {
+                    const res = parseExpression(pending[0])
+                    if (!res.success)
+                        return res
+                    parsed.push(res.value)
+                    pending[0] = []
+                }
             }
         }
     }

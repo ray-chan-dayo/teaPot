@@ -6,6 +6,7 @@ import { parseArgs } from "./parseArgs"
 import { parseExpression } from "./parseExpression"
 import { showError } from "./showError"
 import { vars } from "./libs/shared"
+import { substitute } from "./substitute"
 
 export function jasmineInterPreter(text: string): any {
     const br = /\r\n|\n|\r/g
@@ -23,7 +24,8 @@ export function jasmineInterPreter(text: string): any {
         const section = splitFirst(line, " ")
         switch (section[0]) {
             case "let":{
-                
+                console.log("letting")
+                console.log(substitute(section[1]))
             }break
             case "input":{
                 
@@ -176,4 +178,5 @@ export function jasmineInterPreter(text: string): any {
 
         }
     }
+    console.log(vars)
 }

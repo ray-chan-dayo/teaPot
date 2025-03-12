@@ -1,8 +1,5 @@
-import { splitFirst } from "./libs/miscs";
 import { readFileSync } from "fs";
-import { jasmineInterPrinter } from "./interPreter";
-
-console.log(splitFirst("data 1, 1, 1, 1", " ")[1]);
+import { jasmineInterPreter } from "./interPreter";
 
 // テキストファイルを読み込む関数
 function readTextFile(filePath: string): string {
@@ -11,10 +8,10 @@ function readTextFile(filePath: string): string {
 
 // 読み込んだテキストを処理する関数
 function processText(text: string): void {
-    console.log("ファイルの内容:", jasmineInterPrinter(text));
+    console.log("ファイルの内容:", jasmineInterPreter(text));
 }
 
 // 使用例
-const filePath = "test.jasmine"; // 読み込むファイルのパス
+const filePath = "test2.jasmine"; // 読み込むファイルのパス
 const fileContent = readTextFile(filePath);
 processText(fileContent);
