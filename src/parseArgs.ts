@@ -130,7 +130,7 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                                 if (isPrevSpace)
                                     return Expect.error("expected_comma",i)
                                 else
-                                    return Expect.error("type_not_array",i)
+                                    return Expect.error("index_non_array",i)
                             pending[0].push(new leaf.ArrayLiteral())
                             pending.unshift([])
                         }

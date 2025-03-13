@@ -3,7 +3,7 @@ import { isDecimalNumber, splitFirst } from "./libs/miscs";
 // dataは逆順なので注意
 export function jasmineDataPicker(text: string) {
     const br = /\r\n|\n|\r/g
-    const data:Array<Number|string> = []
+    const data:Array<number|string> = []
 
     text.split(br)
         .forEach(line=>{

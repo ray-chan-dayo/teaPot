@@ -2,9 +2,8 @@ import { parseArgs } from "./parseArgs"
 import * as leaf from "./leaves"
 import { Expect } from "./libs/expect"
 import { executeExpression } from "./executeExpression"
-import { vars } from "./libs/shared"
 
-export function parseSubstitution(expression: string): Expect<undefined> {
+export function parseSubstitution(expression: string, vars: Record<string, leaf.potValue>): Expect<undefined> {
     const exp = parseArgs(expression)
     if (!exp.success)
         return exp
@@ -15,13 +14,13 @@ export function parseSubstitution(expression: string): Expect<undefined> {
         const variable = declearing.left
         const value = executeExpression(declearing.right)
         if (!value.success) return value
-        const result = substitute(variable, value.value)
+        const result = substitute(variable, value.value, vars)
         if (!result.success) return result
     }
     return Expect.result(undefined)
 }
 
-export function substitute(variable: leaf.Prototype, value: leaf.potValue): Expect<undefined> {
+export function substitute(variable: leaf.Prototype, value: leaf.potValue, vars: Record<string, leaf.potValue>): Expect<undefined> {
     if (leaf.isVariable(variable) || leaf.isArrayElement(variable)) {
         // type check
         if ( !(
@@ -62,4 +61,7 @@ export function substitute(variable: leaf.Prototype, value: leaf.potValue): Expe
     } else {
         return Expect.error("substitute_to_invalid")
     }
+    // 到達不可能であるはずなんだが？？？
+    console.error("substitute didnt return")
+    return Expect.error("internal_error")
 }
