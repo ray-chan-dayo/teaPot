@@ -211,6 +211,9 @@ export function isLogicalOperator (s:string):s is logicalOperator {
     return ["not","and","or"].includes(s)
 }
 
+export type forParts = "to" | "step"
+
+
 export function mightBeNumber(l:Prototype) {
     // console.log(`${l} is ${(
     //     isBinaryOperation(l) ||

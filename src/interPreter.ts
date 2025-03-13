@@ -199,9 +199,14 @@ export function jasmineInterPreter(text: string): any {
                 }
             }break
             case "for":{
-
+                
             }break
             case "next":{
+                while (splitFirst(lines[i].trimStart(), " ")[0] !== "for") {
+                    if (i <= 0) return showError(Expect.error("for_not_found"), i)
+                    i--
+                }
+                // ここでfor文の処理を行う
 
             }break
             case "end":{
@@ -328,13 +333,14 @@ export function jasmineInterPreter(text: string): any {
                 const result = executeExpression(args.value[0])
                 if (!result.success) return showError(result, i)
                 const text = result.value
-                if (typeof text.value !== "string") showError(Expect.error("type_error"), i)
-                const voice = new SpeechSynthesisUtterance(text.value)
+                if (typeof text !== "string") return showError(Expect.error("type_error"), i)
+                const voice = new SpeechSynthesisUtterance(text)
                 speechSynthesis.speak(voice)
             }break
+            case "rem":break
             default:{
                 // 代入だけパース
-                const result = parseSubstitution(line)
+                const result = parseSubstitution(line, vars)
             }break
 
         }
