@@ -10,7 +10,7 @@ import { functions, procedures } from "./libs/shared"
 
 // 史上最悪でカスな実装をするが後ほどリファクタリングする
 
-export function jasmineInterPreter(text: string): any {
+export async function jasmineInterPreter(text: string, isFor: boolean = false): Promise<any> {
     const br = /\r\n|\n|\r/g
     const vars: Record<string, leaf.potValue> = {}
     const lines = text.split(br)
@@ -27,7 +27,8 @@ export function jasmineInterPreter(text: string): any {
     let functionCount = 0
     let procedureCount = 0
     for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trimStart()
+        const line = lines[i]
+            .split("//")[0].split("'")[0].trim() // コメントと空白の削除
         const section = splitFirst(line, " ")
         if (section[0] === "do") doCount++
         if (section[0] === "loop") doCount--
@@ -37,7 +38,7 @@ export function jasmineInterPreter(text: string): any {
         if (section[0] === "end" && section[1] == "if") ifCount--
         if (section[0] === "function") {
             const args = parseArgs(section[1])
-            if (doCount !== 0 || forCount !== 0 || ifCount !== 0 || functionCount !== 0) return showError(Expect.error("invalid_function_declear_placement"), i)
+            if (doCount !== 0 || forCount !== 0 || ifCount !== 0 || functionCount !== 0 || procedureCount !== 0) return showError(Expect.error("invalid_function_declear_placement"), i)
             if (!args.success) return showError(args, i)
             if (args.value.length !== 1 || !leaf.isFunc(args.value[0]) ) return showError(Expect.error("invalid_args"), i)
             // ここに予約語のチェックを入れる
@@ -48,7 +49,7 @@ export function jasmineInterPreter(text: string): any {
         if (section[0] === "procedure") {
             // 上の処理を流用
             const args = parseArgs(section[1])
-            if (doCount !== 0 || forCount !== 0 || ifCount !== 0 || procedureCount !== 0) return showError(Expect.error("invalid_procedure_declear_placement"), i)
+            if (doCount !== 0 || forCount !== 0 || ifCount !== 0 || functionCount !== 0 || procedureCount !== 0) return showError(Expect.error("invalid_procedure_declear_placement"), i)
             if (!args.success) return showError(args, i)
             if (args.value.length !== 1 || !leaf.isFunc(args.value[0]) ) return showError(Expect.error("invalid_args"), i)
             // ここに予約語のチェックを入れる
@@ -182,14 +183,14 @@ export function jasmineInterPreter(text: string): any {
                     case "do":{
                         stack.push(i)
                         while (splitFirst(lines[i].trimStart(), " ")[0] !== "loop") {
-                            if (i >= lines.length) return showError(Expect.error("loop_not_found"), i)
+                            if (i >= lines.length) return showError(Expect.error("internal_error"), -1)
                             i++
                         }
                     }break
                     case "loop":{
                         stack.push(i)
                         while (splitFirst(lines[i].trimStart(), " ")[0] !== "end loop") {
-                            if (i >= lines.length) return showError(Expect.error("end_loop_not_found"), i)
+                            if (i >= lines.length) return showError(Expect.error("internal_error"), -1)
                             i++
                         }
                     }break
@@ -199,30 +200,43 @@ export function jasmineInterPreter(text: string): any {
                 }
             }break
             case "for":{
-                
+                // パース
+                const args = parseArgs(section[1], true)
+                if (!args.success) return showError(args, i)
+                if (args.value.length !== 3 && args.value.length !== 5) return showError(Expect.error("invalid_for"), i)
+                if ( !leaf.isUnparsed(args.value[1]) || args.value[1].value !== "to" ) return showError(Expect.error("expected_to"), i)
+                if ( args.value.length === 5 && (!leaf.isUnparsed(args.value[3]) || args.value[3].value !== "step") ) return showError(Expect.error("expected_step"), i)
+                // 実行
+                parseSubstitution(args.value[0], vars)
             }break
             case "next":{
                 while (splitFirst(lines[i].trimStart(), " ")[0] !== "for") {
                     if (i <= 0) return showError(Expect.error("for_not_found"), i)
                     i--
                 }
-                // ここでfor文の処理を行う
+                // TODO: for文のパース
+                const args = parseArgs(splitFirst(lines[i].trimStart(), " ")[1], true)
+
 
             }break
-            case "end":{
-
-            }break
-            case "stop":{
-
-            }break
+            case "end":return showError(Expect.error("unexpected_end"), i)
+            case "stop":return showError(Expect.error("stop"), i)
             case "pause":{
-
+                const args = parseArgs(section[1])
+                if (!args.success) return showError(args, i)
+                if (args.value.length !== 1) return showError(Expect.error("invalid_args"), i)
+                const result = executeExpression(args.value[0])
+                if (!result.success) return showError(result, i)
+                if (typeof result.value !== "number") return showError(Expect.error("type_error"), i)
+                await new Promise<void>(resolve => setTimeout(resolve, (result.value as number)))
             }break
             case "procedure":{
-
+                const args = parseArgs(section[1])
+                if (!args.success) return showError(args, i)
+                if (args.value.length !== 1 || !leaf.isFunc(args.value[0]) ) return showError(Expect.error("invalid_args"), i)
+                if (procedures[args.value[0].name] !== i) return showError(Expect.error("invalid_procedure"), i)
             }break
             case "call":{
-
             }break
             case "function":{
 
@@ -309,7 +323,7 @@ export function jasmineInterPreter(text: string): any {
 
             }break
             case "beep":{
-
+                console.log("beep!")
             }break
             case "play":{
 
@@ -339,8 +353,11 @@ export function jasmineInterPreter(text: string): any {
             }break
             case "rem":break
             default:{
-                // 代入だけパース
-                const result = parseSubstitution(line, vars)
+                if (section[0] !== "") {
+                    // 代入だけパース
+                    const result = parseSubstitution(line, vars)
+                    if (!result.success) showError(result, i)
+                }
             }break
 
         }

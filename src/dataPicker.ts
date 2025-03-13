@@ -1,17 +1,20 @@
+import { potValue } from "./leaves";
+import { Expect } from "./libs/expect";
 import { isDecimalNumber, splitFirst } from "./libs/miscs";
+import { data } from "./libs/shared";
 
 // dataは逆順なので注意
-export function jasmineDataPicker(text: string) {
+export function jasmineDataPicker(text: string): Expect<Array<potValue>> {
     const br = /\r\n|\n|\r/g
-    const data:Array<number|string> = []
-
     text.split(br)
         .forEach(line=>{
             const section = splitFirst(line.trimStart(), " ")
             if ( section[0] === "data" )
                 line.split(",")
                     .forEach(dataPile=>{
-                        dataPile = dataPile.trimStart()
+                        dataPile = dataPile.trim()
+                        if (dataPile === "") return Expect.error("empty_data")
+                        if (dataPile.includes(":")) return Expect.error("data_:")
                         if (isDecimalNumber(dataPile)){
                             data.unshift(parseFloat(dataPile))
                         } else {
@@ -20,5 +23,5 @@ export function jasmineDataPicker(text: string) {
                     })
         })
 
-    return data
+    return Expect.result(data)
 }

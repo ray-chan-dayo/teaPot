@@ -3,7 +3,7 @@ import { Expect } from "./libs/expect"
 import { relationalOperators } from "./libs/miscs"
 import { parseExpression } from "./parseExpression"
 
-export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
+export function parseArgs( input: string ,isFor:boolean = false): Expect<Array<leaf.Prototype>> {
 
     const ripped = input.split('"')
     if (ripped.length % 2 !== 1)
@@ -55,6 +55,15 @@ export function parseArgs( input: string ): Expect<Array<leaf.Prototype>> {
                     pending[0].push(new leaf.UnparsedLogial(current.value))
                     isExpressionExpected = true
                 }
+                // <カス>
+                else if (current.value === "to" || current.value === "step") {
+                    // for文パーツの処理
+                    if (!isFor) return Expect.error("unexpected_reserved",i)
+                    if (isExpressionExpected) return Expect.error("expected_object",i)
+                    isExpressionExpected = true
+                    pending[0].push(new leaf.Unparsed(current.value))
+                }
+                // </カス>
                 else {
                     if (!isExpressionExpected) return Expect.error("expected_comma",i)
                     isExpressionExpected = false

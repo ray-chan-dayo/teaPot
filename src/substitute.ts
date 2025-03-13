@@ -3,13 +3,18 @@ import * as leaf from "./leaves"
 import { Expect } from "./libs/expect"
 import { executeExpression } from "./executeExpression"
 
-export function parseSubstitution(expression: string, vars: Record<string, leaf.potValue>): Expect<undefined> {
-    const exp = parseArgs(expression)
-    if (!exp.success)
-        return exp
-    if ( exp.value.length !== 1 )
-        return Expect.error("invalid_let")
-    const declearing = exp.value[0]
+export function parseSubstitution(expression: string | leaf.Prototype, vars: Record<string, leaf.potValue>): Expect<undefined> {
+    let declearing: leaf.Prototype
+    if (typeof expression === "string") {
+        const exp = parseArgs(expression)
+        if (!exp.success)
+            return exp
+        if ( exp.value.length !== 1 )
+            return Expect.error("invalid_let")
+        declearing = exp.value[0]
+    } else {
+        declearing = expression
+    }
     if (leaf.isBinaryOperation(declearing) && declearing.operation === "=") {
         const variable = declearing.left
         const value = executeExpression(declearing.right)
