@@ -59,9 +59,24 @@ export function parseArgs( input: string ,isFor:boolean = false): Expect<Array<l
                 else if (current.value === "to" || current.value === "step") {
                     // for文パーツの処理
                     if (!isFor) return Expect.error("unexpected_reserved",i)
+
+                    // ,から流用
                     if (isExpressionExpected) return Expect.error("expected_object",i)
                     isExpressionExpected = true
-                    pending[0].push(new leaf.Unparsed(current.value))
+                    
+                    if (pending[1]) Expect.error("unexpected_reserved",i)
+                    if (pending[0].length > 0) {
+                        const res = parseExpression(pending[0])
+                        if (!res.success)
+                            return res
+                        parsed.push(res.value)
+                        pending[0] = []
+                    } else
+                        // toやstepの前に何もない場合にエラーを返すことになる。
+                        // 何もなかったらisExpressionExpectedがtrueだったはずなので、ここには来ないはず。
+                        return Expect.error("internal_error",i)
+                    
+                    parsed.push(new leaf.Unparsed(current.value))
                 }
                 // </カス>
                 else {

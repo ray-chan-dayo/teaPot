@@ -211,7 +211,14 @@ export function isLogicalOperator (s:string):s is logicalOperator {
     return ["not","and","or"].includes(s)
 }
 
-export type forParts = "to" | "step"
+// export class UnparsedFor {
+//     type: "unparsedfor" = "unparsedfor"
+//     pottype: potType = "any"
+//     value: "to" | "step"
+//     constructor(value: "to" | "step") {
+//         this.value = value
+//     }
+// }
 
 
 export function mightBeNumber(l:Prototype) {
@@ -272,3 +279,20 @@ export type Prototype = // Coordinate
 | ArrayElement
 | UnparsedLogial
 | BitNot
+// | UnparsedFor
+
+export class node {
+    operation: string
+    children: Array<Prototype>
+
+    constructor(operation: string, children: Array<Prototype>) {
+        this.operation = operation
+        this.children = children
+    }
+}
+
+export class forNode extends node {
+    constructor(operation: string) {
+        super(operation, [])
+    }
+}
