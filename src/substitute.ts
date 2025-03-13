@@ -2,6 +2,7 @@ import { parseArgs } from "./parseArgs"
 import * as leaf from "./leaves"
 import { Expect } from "./libs/expect"
 import { executeExpression } from "./executeExpression"
+import { reserved } from "./libs/miscs"
 
 export function parseSubstitution(expression: string | leaf.Prototype, vars: Record<string, leaf.potValue>): Expect<undefined> {
     let declearing: leaf.Prototype
@@ -35,6 +36,8 @@ export function substitute(variable: leaf.Prototype, value: leaf.potValue, vars:
         ))
             return Expect.error("type_error")
         if (leaf.isVariable(variable)) {
+            // todo: 予約語のチェック
+            reserved.includes(variable.name) && Expect.error("reserved_word")
             vars[variable.name] = value
             return Expect.result(undefined)
         }

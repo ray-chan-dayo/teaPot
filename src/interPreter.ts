@@ -6,16 +6,19 @@ import { showError } from "./showError"
 import { parseSubstitution, substitute } from "./substitute"
 import { jasmineDataPicker } from "./dataPicker"
 import { executeExpression } from "./executeExpression"
-import { functions, procedures } from "./libs/shared"
+import { data, functions, procedures } from "./libs/shared"
 
 // 史上最悪でカスな実装をするが後ほどリファクタリングする
 
 export async function jasmineInterPreter(text: string, isFor: boolean = false): Promise<any> {
+    
+    // data
+    const dataResult = jasmineDataPicker(text)
+    if (!dataResult.success) return showError(dataResult, -1)
+    
     const br = /\r\n|\n|\r/g
     const vars: Record<string, leaf.potValue> = {}
     const lines = text.split(br)
-    // データの処理
-    const data = jasmineDataPicker(text)
     const stack: Array<number> = []
 
     // ここからカス
@@ -45,7 +48,10 @@ export async function jasmineInterPreter(text: string, isFor: boolean = false): 
             functions[args.value[0].name] = i
             functionCount++
         }
-        if (section[0] === "end" && section[1] == "function") functionCount--
+        if (section[0] === "end" && section[1] == "function") {
+            functionCount--
+            if (doCount !== 0 || forCount !== 0 || ifCount !== 0 || functionCount !== 0 || procedureCount !== 0) return showError(Expect.error("no_end"), i)
+        }
         if (section[0] === "procedure") {
             // 上の処理を流用
             const args = parseArgs(section[1])
@@ -56,7 +62,10 @@ export async function jasmineInterPreter(text: string, isFor: boolean = false): 
             procedures[args.value[0].name] = i
             procedureCount++
         }
-        if (section[0] === "end" && section[1] == "procedure") procedureCount--
+        if (section[0] === "end" && section[1] == "procedure") {
+            procedureCount--
+            if (doCount !== 0 || forCount !== 0 || ifCount !== 0 || functionCount !== 0 || procedureCount !== 0) return showError(Expect.error("no_end"), i)
+        }
     }
 
 
