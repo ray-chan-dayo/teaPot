@@ -3,9 +3,9 @@ import { Expect } from "./libs/expect"
 import { relationalOperators } from "./libs/miscs"
 import { parseExpression } from "./parseExpression"
 
-export function parseArgs( input: string ,isFor:boolean = false): Expect<Array<leaf.Prototype>> {
+export function parseArgs( input: string, isFor: boolean = false ): Expect<Array<leaf.Prototype>> {
 
-    const ripped = input.split('"')
+    const ripped = input.trim().split('"')
     if (ripped.length % 2 !== 1)
         return Expect.error("invalid_quote")
 

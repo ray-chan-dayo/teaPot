@@ -154,6 +154,11 @@ export class RoundBracket {
 export function isRoundBracket(l:Prototype | undefined):l is RoundBracket {
     return l !== undefined && l.type === "round";
 }
+export function isPosition(l:Prototype | undefined):l is RoundBracket {
+    return isRoundBracket(l) && l.children.length === 2 &&
+    (l.children[0].pottype === "any" || l.children[0].pottype === "number") &&
+    (l.children[1].pottype === "any" || l.children[1].pottype === "number")
+}
 
 export class ArrayLiteral {
     type: "array" = "array"
@@ -193,6 +198,12 @@ export class ArrayElement {
 
 export function isArrayElement(l:Prototype | undefined):l is ArrayElement {
     return l !== undefined && l.type === "elem";
+}
+
+export function isSubstitutable(l:Prototype | undefined):l is Variable | ArrayElement {
+    let curr = l
+    while (isArrayElement(curr)) curr = curr.array
+    return isVariable(l) || isVariable(curr)
 }
 
 export type logicalOperator = "not" | "and" | "or"
@@ -240,17 +251,6 @@ export function mightBeNumber(l:Prototype) {
         isNumber(l) ||
         isArrayElement(l) ||
         isNot(l)
-    )
-}
-export function mightBeString(l:Prototype) {
-    return(
-        // 下に同じく
-        isRoundBracket(l) ||
-        isBinaryOperation(l) && l.operation === "+" ||
-        isFunc(l) && l.name[l.name.length-1]==="$" ||
-        isUnparsed(l) && l.value[l.value.length-1]==="$" ||
-        isString(l) ||
-        isArrayElement(l)
     )
 }
 export function mightBeArray(l:Prototype) {
