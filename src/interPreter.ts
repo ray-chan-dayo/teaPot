@@ -21,9 +21,11 @@ export async function jasmineInterPreter(text: string, isFor: boolean = false): 
     const lines = text.split(br).map((line) => line.trim())
     const stack: Array<number> = []
 
+    const parsed: Array<leaf.node> = []
     // ここからカス
     // do-loop, if-end if, for-nextが正しく対応して存在するかどうかを確認する
     // ついでにfunctionをパースしておく
+    // というかパースはここでやろう
     let doCount = 0
     let ifCount = 0
     let forCount = 0
@@ -34,6 +36,8 @@ export async function jasmineInterPreter(text: string, isFor: boolean = false): 
         const section = splitFirst(line, " ")
         switch (section[0]) {
             case "do": {
+                const args = parseArgs(section[1])
+                parsed.push(new leaf.node("do", section[1]))
                 doCount++
             }break
             case "loop": {
