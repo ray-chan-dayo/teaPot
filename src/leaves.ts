@@ -283,11 +283,11 @@ export type Prototype = // Coordinate
 
 export class node {
     operation: string
-    children: Array<Prototype>
+    args: Array<Prototype>
 
-    constructor(operation: string, children: Array<Prototype>) {
+    constructor(operation: string, args: Array<Prototype> = []) {
         this.operation = operation
-        this.children = children
+        this.args = args
     }
 }
 
