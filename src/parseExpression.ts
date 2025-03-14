@@ -1,5 +1,6 @@
 import * as leaf from "./leaves"
 import { Expect } from "./libs/expect"
+import { reserved } from "./libs/miscs"
 
 const order: Array<Array<{ operator: leaf.binaryOperator, pottype: Array<leaf.potType> }>> = [
     [
@@ -24,13 +25,14 @@ const order: Array<Array<{ operator: leaf.binaryOperator, pottype: Array<leaf.po
     ],[
         { operator: "xor", pottype: ["any","number"] }
     ]
-
 ] as const
 
 export function parseExpression( target: Array<leaf.Prototype> ): Expect<leaf.Prototype> {
     for (let i = 0; i < target.length; i++) {
         const current = target[i]
-        if ( leaf.isUnparsed(current) && /\w/.test(current.value[0]) )
+        if ( leaf.isUnparsed(current) && /\w/.test(current.value[0]) ) {
+            if (reserved.includes(current.value))
+                return Expect.error("reserved_word")
             // 半角英数
             if (current.value.at(-1) === "$")
                 target[i] = new leaf.Variable(current.value, "string")
@@ -38,6 +40,7 @@ export function parseExpression( target: Array<leaf.Prototype> ): Expect<leaf.Pr
                 target[i] = new leaf.Variable(current.value, "array")
             else
                 target[i] = new leaf.Variable(current.value, "number")
+            }
         if ( leaf.isFunc(current) )
             // 関数
             if (current.name.at(-1) === "$")
